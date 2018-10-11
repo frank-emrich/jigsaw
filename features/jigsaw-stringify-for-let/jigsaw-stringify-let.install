@@ -1,0 +1,17 @@
+lib: [
+  "_build/install/default/lib/jigsaw-stringify-let/META" {"META"}
+  "_build/install/default/lib/jigsaw-stringify-let/jigsaw-stringify-let.dune" {"jigsaw-stringify-let.dune"}
+  "_build/install/default/lib/jigsaw-stringify-let/opam" {"opam"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_for_let.ml" {"stringify_for_let.ml"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_let.a" {"stringify_let.a"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_let.cma" {"stringify_let.cma"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_let.cmi" {"stringify_let.cmi"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_let.cmt" {"stringify_let.cmt"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_let.cmx" {"stringify_let.cmx"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_let.cmxa" {"stringify_let.cmxa"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_let.cmxs" {"stringify_let.cmxs"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_let.ml-gen" {"stringify_let.ml-gen"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_let__Stringify_for_let.cmi" {"stringify_let__Stringify_for_let.cmi"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_let__Stringify_for_let.cmt" {"stringify_let__Stringify_for_let.cmt"}
+  "_build/install/default/lib/jigsaw-stringify-let/stringify_let__Stringify_for_let.cmx" {"stringify_let__Stringify_for_let.cmx"}
+]

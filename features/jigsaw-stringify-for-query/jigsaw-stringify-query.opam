@@ -1,0 +1,21 @@
+opam-version: "1.2"
+maintainer: "You"
+
+available: [
+  ocaml-version >= "4.06.0"
+]
+
+build: [
+  [ "dune" "build" ]
+]
+
+
+
+
+
+depends: [
+  "dune" {build}
+  "jigsaw-core"
+  "jigsaw-stringify"
+  "jigsaw-query"
+]

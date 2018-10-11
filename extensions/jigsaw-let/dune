@@ -1,0 +1,4 @@
+(library
+ (name        let)
+ (public_name jigsaw-let)
+ (libraries jigsaw-core))

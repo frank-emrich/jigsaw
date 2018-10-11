@@ -1,0 +1,13 @@
+lib: [
+  "_build/install/default/lib/jigsaw-query/META" {"META"}
+  "_build/install/default/lib/jigsaw-query/jigsaw-query.dune" {"jigsaw-query.dune"}
+  "_build/install/default/lib/jigsaw-query/opam" {"opam"}
+  "_build/install/default/lib/jigsaw-query/query.a" {"query.a"}
+  "_build/install/default/lib/jigsaw-query/query.cma" {"query.cma"}
+  "_build/install/default/lib/jigsaw-query/query.cmi" {"query.cmi"}
+  "_build/install/default/lib/jigsaw-query/query.cmt" {"query.cmt"}
+  "_build/install/default/lib/jigsaw-query/query.cmx" {"query.cmx"}
+  "_build/install/default/lib/jigsaw-query/query.cmxa" {"query.cmxa"}
+  "_build/install/default/lib/jigsaw-query/query.cmxs" {"query.cmxs"}
+  "_build/install/default/lib/jigsaw-query/query.ml" {"query.ml"}
+]

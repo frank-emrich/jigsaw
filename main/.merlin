@@ -1,0 +1,15 @@
+B /home/frank/.opam/4.06.1/lib/jigsaw-core
+B /home/frank/.opam/4.06.1/lib/jigsaw-let
+B /home/frank/.opam/4.06.1/lib/jigsaw-query
+B /home/frank/.opam/4.06.1/lib/jigsaw-stringify
+B /home/frank/.opam/4.06.1/lib/jigsaw-stringify-let
+B /home/frank/.opam/4.06.1/lib/jigsaw-stringify-query
+B _build/default/.jigsaw.eobjs
+S /home/frank/.opam/4.06.1/lib/jigsaw-core
+S /home/frank/.opam/4.06.1/lib/jigsaw-let
+S /home/frank/.opam/4.06.1/lib/jigsaw-query
+S /home/frank/.opam/4.06.1/lib/jigsaw-stringify
+S /home/frank/.opam/4.06.1/lib/jigsaw-stringify-let
+S /home/frank/.opam/4.06.1/lib/jigsaw-stringify-query
+S .
+FLG -w @a-4-29-40-41-42-44-45-48-58-59-60-40 -strict-sequence -strict-formats -short-paths -keep-locs

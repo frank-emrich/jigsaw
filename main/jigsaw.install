@@ -1,0 +1,4 @@
+lib: [
+  "_build/install/default/lib/jigsaw/META" {"META"}
+  "_build/install/default/lib/jigsaw/opam" {"opam"}
+]

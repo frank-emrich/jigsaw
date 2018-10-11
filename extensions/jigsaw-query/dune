@@ -1,0 +1,5 @@
+(library
+ (name        query)
+ (public_name jigsaw-query)
+ (flags (:standard -w a))
+ (libraries jigsaw-core jigsaw-stringify))

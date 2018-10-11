@@ -1,0 +1,13 @@
+lib: [
+  "_build/install/default/lib/jigsaw-let/META" {"META"}
+  "_build/install/default/lib/jigsaw-let/jigsaw-let.dune" {"jigsaw-let.dune"}
+  "_build/install/default/lib/jigsaw-let/let.a" {"let.a"}
+  "_build/install/default/lib/jigsaw-let/let.cma" {"let.cma"}
+  "_build/install/default/lib/jigsaw-let/let.cmi" {"let.cmi"}
+  "_build/install/default/lib/jigsaw-let/let.cmt" {"let.cmt"}
+  "_build/install/default/lib/jigsaw-let/let.cmx" {"let.cmx"}
+  "_build/install/default/lib/jigsaw-let/let.cmxa" {"let.cmxa"}
+  "_build/install/default/lib/jigsaw-let/let.cmxs" {"let.cmxs"}
+  "_build/install/default/lib/jigsaw-let/let.ml" {"let.ml"}
+  "_build/install/default/lib/jigsaw-let/opam" {"opam"}
+]

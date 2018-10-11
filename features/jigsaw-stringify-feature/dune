@@ -1,0 +1,4 @@
+(library
+ (name        stringify)
+ (public_name jigsaw-stringify)
+ (libraries jigsaw-core))

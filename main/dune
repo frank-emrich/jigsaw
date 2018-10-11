@@ -1,0 +1,4 @@
+(executable
+  (name jigsaw)
+  (libraries jigsaw-core jigsaw-query jigsaw-let jigsaw-stringify jigsaw-stringify-query jigsaw-stringify-let)
+)

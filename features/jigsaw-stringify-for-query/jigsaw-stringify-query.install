@@ -1,0 +1,17 @@
+lib: [
+  "_build/install/default/lib/jigsaw-stringify-query/META" {"META"}
+  "_build/install/default/lib/jigsaw-stringify-query/jigsaw-stringify-query.dune" {"jigsaw-stringify-query.dune"}
+  "_build/install/default/lib/jigsaw-stringify-query/opam" {"opam"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_for_query.ml" {"stringify_for_query.ml"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_query.a" {"stringify_query.a"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_query.cma" {"stringify_query.cma"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_query.cmi" {"stringify_query.cmi"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_query.cmt" {"stringify_query.cmt"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_query.cmx" {"stringify_query.cmx"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_query.cmxa" {"stringify_query.cmxa"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_query.cmxs" {"stringify_query.cmxs"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_query.ml-gen" {"stringify_query.ml-gen"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_query__Stringify_for_query.cmi" {"stringify_query__Stringify_for_query.cmi"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_query__Stringify_for_query.cmt" {"stringify_query__Stringify_for_query.cmt"}
+  "_build/install/default/lib/jigsaw-stringify-query/stringify_query__Stringify_for_query.cmx" {"stringify_query__Stringify_for_query.cmx"}
+]

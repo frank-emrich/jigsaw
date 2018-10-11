@@ -1,0 +1,21 @@
+lib: [
+  "_build/install/default/lib/jigsaw-core/Ir.ml" {"Ir.ml"}
+  "_build/install/default/lib/jigsaw-core/META" {"META"}
+  "_build/install/default/lib/jigsaw-core/core.a" {"core.a"}
+  "_build/install/default/lib/jigsaw-core/core.cma" {"core.cma"}
+  "_build/install/default/lib/jigsaw-core/core.cmi" {"core.cmi"}
+  "_build/install/default/lib/jigsaw-core/core.cmt" {"core.cmt"}
+  "_build/install/default/lib/jigsaw-core/core.cmx" {"core.cmx"}
+  "_build/install/default/lib/jigsaw-core/core.cmxa" {"core.cmxa"}
+  "_build/install/default/lib/jigsaw-core/core.cmxs" {"core.cmxs"}
+  "_build/install/default/lib/jigsaw-core/core.ml-gen" {"core.ml-gen"}
+  "_build/install/default/lib/jigsaw-core/core__Ir.cmi" {"core__Ir.cmi"}
+  "_build/install/default/lib/jigsaw-core/core__Ir.cmt" {"core__Ir.cmt"}
+  "_build/install/default/lib/jigsaw-core/core__Ir.cmx" {"core__Ir.cmx"}
+  "_build/install/default/lib/jigsaw-core/core__Types.cmi" {"core__Types.cmi"}
+  "_build/install/default/lib/jigsaw-core/core__Types.cmt" {"core__Types.cmt"}
+  "_build/install/default/lib/jigsaw-core/core__Types.cmx" {"core__Types.cmx"}
+  "_build/install/default/lib/jigsaw-core/jigsaw-core.dune" {"jigsaw-core.dune"}
+  "_build/install/default/lib/jigsaw-core/opam" {"opam"}
+  "_build/install/default/lib/jigsaw-core/types.ml" {"types.ml"}
+]

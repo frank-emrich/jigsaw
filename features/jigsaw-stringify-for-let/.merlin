@@ -1,0 +1,9 @@
+B /home/frank/.opam/4.06.1/lib/jigsaw-core
+B /home/frank/.opam/4.06.1/lib/jigsaw-let
+B /home/frank/.opam/4.06.1/lib/jigsaw-stringify
+B _build/default/.stringify_let.objs
+S /home/frank/.opam/4.06.1/lib/jigsaw-core
+S /home/frank/.opam/4.06.1/lib/jigsaw-let
+S /home/frank/.opam/4.06.1/lib/jigsaw-stringify
+S .
+FLG -open Stringify_let -w @a-4-29-40-41-42-44-45-48-58-59-60-40 -strict-sequence -strict-formats -short-paths -keep-locs

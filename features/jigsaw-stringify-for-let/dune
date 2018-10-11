@@ -1,0 +1,4 @@
+(library
+ (name        stringify_let)
+ (public_name jigsaw-stringify-let)
+ (libraries jigsaw-core jigsaw-stringify jigsaw-let))
