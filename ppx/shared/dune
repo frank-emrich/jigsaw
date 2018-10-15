@@ -1,0 +1,4 @@
+(library
+ (name        jigsaw_ppx_shared)
+ (public_name jigsaw-ppx.shared)
+ (libraries ocaml-migrate-parsetree))
