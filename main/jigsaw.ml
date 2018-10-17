@@ -1,83 +1,92 @@
 
 (* The union of all extensions of the core types *)
-type ext_type =
-   | QueryTypeExt of Query.query_type_ext
+type typ =
+   | CoreTyp of typ Core.Types.core_typ 
+   | QueryTyp of Query.query_typ
 
 (* The union of all extensions of the core terms *)
-type ext_term =
-   | QueryTermExt of (ext_term, ext_type) Query.query_term_ext  
-   | LetTermExt of  (ext_term, ext_type) Let.let_term_ext
+type term =
+   | CoreTerm of (term, typ) Core.Ir.core_term
+   | QueryTerm of term Query.query_term  
+   | LetTerm of term Let.let_term
 
 (* The union of all extensions of the core values *)
-type ext_value =
-   | QueryValueExt of Query.query_value_ext  
+type value =
+   | CoreValue of (term, typ) Core.Ir.core_value
+   | QueryValue of Query.query_value  
 
-let lift_query_type (qt : Query.query_type_ext) = Core.Types.ExtTyp (QueryTypeExt qt)
-let unlift_query_type (t : ext_type Core.Types.core_type) = match t with
-    | Core.Types.ExtTyp (QueryTypeExt qt) -> qt
-    | _ -> failwith "illegal use of unlift_query_type" 
-let lift_query_value (qv : Query.query_value_ext) = Core.Ir.ExtValue (QueryValueExt qv)
-let unlift_query_value (v : (ext_value, ext_term, ext_type) Core.Ir.core_value) = match v with
-   | Core.Ir.ExtValue (QueryValueExt qv) -> qv
-   | _ -> failwith "Illegal use of  unlift_query_value" 
-let lift_query_term (qt : (ext_term, ext_type) Query.query_term_ext) = Core.Ir.ExtTerm (QueryTermExt qt)
+let lift_query_typ (qt : Query.query_typ) = QueryTyp qt
 
-let lift_let_term (lt : (ext_term, ext_type) Let.let_term_ext) =  Core.Ir.ExtTerm (LetTermExt lt)
+(* TODO: express unlift in terms of option type for nicer pattern matching *)
+let unlift_query_typ (t : typ) = match t with
+    | QueryTyp qt -> Some qt
+    | _ -> None
+let lift_query_value (qv : Query.query_value) =  QueryValue qv
+let unlift_query_value (v : value) = match v with
+   | QueryValue qv -> Some qv
+   | _ -> None
+let lift_query_term (qt : term Query.query_term) = QueryTerm qt
 
-(* The overall type for types*)
-type typ = ext_type Core.Types.core_type
-(* The overall type for terms *)
-type term = (ext_term, ext_type) Core.Ir.core_term
+let lift_let_term (lt : term Let.let_term) =  LetTerm lt
+let lift_core_typ (ct : typ Core.Types.core_typ) : typ = CoreTyp ct
+let lift_core_term (ct : (term, typ) Core.Ir.core_term) : term = CoreTerm ct
+let lift_core_value (v : (term, typ) Core.Ir.core_value) : value = CoreValue v
+let unlift_core_value (v : value) = match v with
+   | CoreValue v -> Some v
+   | _ -> None 
+let unlift_core_typ (t: typ) = match t with
+   | CoreTyp t -> Some t
+   | _ -> None  
 
-let rec ext_typecheck env (term : ext_term) = match term with
-    | QueryTermExt e -> Query.query_typecheck ext_typecheck lift_query_type unlift_query_type env e
-    | LetTermExt e -> Let.let_typecheck ext_typecheck env e
+let rec typecheck env (term : term) = match term with
+    | CoreTerm t -> Core.Ir.core_typecheck typecheck lift_core_typ unlift_core_typ env t
+    | QueryTerm t -> Query.query_typecheck typecheck lift_query_typ lift_core_typ unlift_query_typ  env t
+    | LetTerm t -> Let.let_typecheck typecheck env t
 
-let rec stringify_ext_type t = match t with
-   | QueryTypeExt e -> Stringify_query.Stringify_for_query.stringify_query_type stringify_ext_type e
+let rec stringify_typ t = match t with
+   | CoreTyp t -> Stringify.stringify_core_typ stringify_typ t
+   | QueryTyp t -> Stringify_query.Stringify_for_query.stringify_query_typ  t
 
-let rec stringify_ext_term t = match t with
-   | QueryTermExt e -> Stringify_query.Stringify_for_query.stringify_query_term stringify_ext_term stringify_ext_type e
-   | LetTermExt e -> Stringify_let.Stringify_for_let.stringify_let_term stringify_ext_term stringify_ext_type e
+let rec stringify_term t = match t with
+   | CoreTerm t -> Stringify.stringify_core_term stringify_term stringify_typ t
+   | QueryTerm t -> Stringify_query.Stringify_for_query.stringify_query_term stringify_term t
+   | LetTerm t -> Stringify_let.Stringify_for_let.stringify_let_term stringify_term t
 
-let rec stringify_ext_value (v : ext_value) : string = match v with
-   | QueryValueExt e -> Stringify_query.Stringify_for_query.stringify_query_value stringify_ext_term stringify_ext_type stringify_ext_value e
-
-
-let rec ext_eval env (term: ext_term) = match term with
-   | QueryTermExt e -> Query.query_eval ext_eval lift_query_value unlift_query_value stringify_ext_term stringify_ext_type env e
-   | LetTermExt e -> Let.let_eval ext_eval env e 
-
+let stringify_value (v : value) : string = match v with
+   | CoreValue v -> Stringify.stringify_core_value stringify_typ stringify_term v
+   | QueryValue v -> Stringify_query.Stringify_for_query.stringify_query_value v
 
 
+let rec eval (env : value Core.Ir.venv) (term: term) : value = match term with
+   | CoreTerm t -> Core.Ir.core_eval eval lift_core_value unlift_core_value env t 
+   | QueryTerm (t : term Query.query_term) -> Query.query_eval eval lift_query_value lift_core_value unlift_query_value stringify_term stringify_typ env t
+   | LetTerm t -> Let.let_eval eval env t 
 
 
-let typecheck = Core.Ir.core_typecheck ext_typecheck  
-let eval = Core.Ir.core_eval ext_eval
-let stringify_term = Stringify.Stringify.stringify_term stringify_ext_term stringify_ext_type
-let stringify_type = Stringify.Stringify.stringify_type  stringify_ext_type
-let stringify_value = Stringify.Stringify.stringify_value stringify_ext_term stringify_ext_type stringify_ext_value
+
+
+
 
 (* Everything above this line should eventually be generated from the core + extensions *)
 
 let sample_term1 : term =
-    IfE 
-        (BoolE true,
-         IntE 3,
-         IntE 4)
+    lift_core_term (IfE 
+            (lift_core_term (BoolE true),
+            lift_core_term (IntE 3),
+            lift_core_term (IntE 4)))
 
 let sample_term2 : term = 
     lift_let_term
-        (LetE 
+         (LetE 
             ("x",
             lift_query_term (CreateCell),
-            lift_let_term
-                (LetE 
+            
+                lift_let_term (LetE 
                     ("y",
-                    lift_query_term (Update ((VarE "x"), sample_term1)),
-                    lift_query_term (Query (VarE "x") ) ))))
+                    lift_query_term (Update (lift_core_term (VarE "x"), sample_term1)),
+                    lift_query_term (Query (lift_core_term (VarE "x")) ) ))))
 
 
 let result = eval [] sample_term2 
-let _ = print_endline (stringify_type (typecheck [] sample_term1))
+let _ = print_endline (stringify_typ (typecheck [] sample_term1))
 let _ = print_endline (stringify_value result)

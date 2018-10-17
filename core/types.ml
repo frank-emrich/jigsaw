@@ -1,7 +1,8 @@
-type 'ext_typ core_type =
+type typ [@@extensible_type] 
+
+type 'typ core_typ =
   | UnitT
   | BoolT
   | IntT
   | StringT
-  | Arrow of 'ext_typ core_type * 'ext_typ core_type
-  | ExtTyp of 'ext_typ
+  | Arrow of 'typ * 'typ [@@extension_of typ] 
