@@ -2,7 +2,8 @@
  (name        jigsaw_ppx_analysis)
  (public_name jigsaw-ppx.analysis)
  (modules Analysis)
- (libraries ocaml-migrate-parsetree jigsaw-ppx.shared))
+ (preprocess (pps ppx_deriving.std))
+ (libraries ocaml-migrate-parsetree jigsaw-ppx.shared str))
 
 
 
