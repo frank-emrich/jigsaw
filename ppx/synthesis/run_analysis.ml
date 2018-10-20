@@ -1,6 +1,6 @@
-(* We need to process the files containing the definitions of extensions, feature declarations, feature implementations. 
+(* We need to process the files containing the definitions of extensions, feature declarations, feature implementations.
    In order to do so, we register the corresponding analysis mapper and then call it on the files in question.
-   The necessary information are stored in mutable, global state because the PPX infrastructure is designed to 
+   The necessary information are stored in mutable, global state because the PPX infrastructure is designed to
    rewrite ASTs, not to return analysis information from them. *)
 
 
@@ -15,13 +15,13 @@
 
 let init () =
   print_endline "registered mapper";
-  Custom_driver.register 
-      ~name:"analysis_mapper_external" 
-      Jigsaw_ppx_analysis.Analysis.ocaml_version 
+  Custom_driver.register
+      ~name:"analysis_mapper_external"
+      Jigsaw_ppx_analysis.Analysis.ocaml_version
       Jigsaw_ppx_analysis.Analysis.analysis_mapper
 
 let filename_to_module_name  fname =
-       fname |> Filename.basename |> Filename.remove_extension |> String.capitalize_ascii 
+       fname |> Filename.basename |> Filename.remove_extension |> String.capitalize_ascii
 
 let process_file file =
       let config : Custom_driver.config =
@@ -36,5 +36,5 @@ let process_file file =
       let boxed_file = Custom_driver.guess_file_kind file in
       (* This is hacky, we may want to do this via cookies *)
       let module_name = filename_to_module_name file in
-      Jigsaw_ppx_analysis.Analysis.current_module := [module_name]; 
-      Custom_driver.process_file ~config:config ~output:None  ~output_mode:Null ~embed_errors:false boxed_file  
+      Jigsaw_ppx_analysis.Analysis.current_module := [module_name];
+      Custom_driver.process_file ~config:config ~output:None  ~output_mode:Null ~embed_errors:false boxed_file

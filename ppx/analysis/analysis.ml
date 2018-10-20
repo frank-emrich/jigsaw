@@ -9,7 +9,7 @@ let ocaml_version = Versions.ocaml_407
 
 module AnalysisResults = struct
   let raise_info = Jigsaw_ppx_shared.Errors.raise_info
-  type type_param_assoc_entry = string * string option [@@deriving show] 
+  type type_param_assoc_entry = string * string option [@@deriving show]
 
   let type_table = Hashtbl.create 10
 
@@ -100,11 +100,11 @@ let handle_extensible_type td_record =
       | [(ext_constr_name, ext_constr_loc, ext_constr_args, ext_constr_res_type)] -> (
         match (ext_constr_res_type, ext_constr_args) with
         | Some ct, _ ->
-            raise_error ct.ptyp_loc "Extension point must not have GADT type" 
+            raise_error ct.ptyp_loc "Extension point must not have GADT type"
         | _, Pcstr_record _ ->
             raise_error ext_constr_loc "Extension point must not have record type" ;
         | _, Pcstr_tuple [] | _, Pcstr_tuple (_ :: _ :: _) ->
-            raise_error ext_constr_loc "Extension point constructor must have single argument" 
+            raise_error ext_constr_loc "Extension point constructor must have single argument"
         | _, Pcstr_tuple [{ptyp_desc= Ptyp_var ext_constr_type_var; ptyp_loc= _; ptyp_attributes= _}]
           when List.mem ext_constr_type_var type_param_names ->
             register_extensible_type declared_type_name ext_constr_name ext_constr_type_var ;
@@ -120,10 +120,10 @@ let handle_extensible_type td_record =
 let map_type_parameter_name_to_extensible_type param : string option =
   let regexp = Str.regexp "ext_\\(.+\\)" in
   if Str.string_match regexp param 0 then
-    begin 
+    begin
     let potential_type_name = (Str.matched_group 1 param) in
     if AnalysisResults.has_extensible_type potential_type_name then
-      Some potential_type_name 
+      Some potential_type_name
     else
       None
     end
@@ -146,7 +146,7 @@ let handle_type_extension td_record =
             let matched_extensible_type = map_type_parameter_name_to_extensible_type param_name in
             (param_name, matched_extensible_type)
         | _ ->
-            raise_error loc "Type parameter does not fit excpected shape" 
+            raise_error loc "Type parameter does not fit excpected shape"
       in
       let type_param_assoc_list = List.map match_type_parameters type_parameters in
       register_type_extension extension_name extended_type (List.rev !current_module) type_param_assoc_list ;
@@ -159,7 +159,7 @@ let type_declaration m td_record =
   | None, None -> Ast_mapper.default_mapper.type_declaration m td_record
   | Some _, Some _ ->
       let loc = td_record.ptype_name.loc in
-      raise_error loc "Type cannot be extensible and an extension at the same time" 
+      raise_error loc "Type cannot be extensible and an extension at the same time"
   | Some res, _ | _, Some res -> res
 
 let attribute m attr =

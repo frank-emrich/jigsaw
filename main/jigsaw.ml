@@ -1,19 +1,19 @@
 
 (* The union of all extensions of the core types *)
 type typ =
-   | CoreTyp of typ Core.Types.core_typ 
+   | CoreTyp of typ Core.Types.core_typ
    | QueryTyp of Query.query_typ
 
 (* The union of all extensions of the core terms *)
 type term =
    | CoreTerm of (term, typ) Core.Ir.core_term
-   | QueryTerm of term Query.query_term  
+   | QueryTerm of term Query.query_term
    | LetTerm of term Let.let_term
 
 (* The union of all extensions of the core values *)
 type value =
    | CoreValue of (term, typ) Core.Ir.core_value
-   | QueryValue of Query.query_value  
+   | QueryValue of Query.query_value
 
 let lift_query_typ (qt : Query.query_typ) = QueryTyp qt
 
@@ -33,10 +33,10 @@ let lift_core_term (ct : (term, typ) Core.Ir.core_term) : term = CoreTerm ct
 let lift_core_value (v : (term, typ) Core.Ir.core_value) : value = CoreValue v
 let unlift_core_value (v : value) = match v with
    | CoreValue v -> Some v
-   | _ -> None 
+   | _ -> None
 let unlift_core_typ (t: typ) = match t with
    | CoreTyp t -> Some t
-   | _ -> None  
+   | _ -> None
 
 let rec typecheck env (term : term) = match term with
     | CoreTerm t -> Core.Ir.core_typecheck typecheck lift_core_typ unlift_core_typ env t
@@ -58,9 +58,9 @@ let stringify_value (v : value) : string = match v with
 
 
 let rec eval (env : value Core.Ir.venv) (term: term) : value = match term with
-   | CoreTerm t -> Core.Ir.core_eval eval lift_core_value unlift_core_value env t 
+   | CoreTerm t -> Core.Ir.core_eval eval lift_core_value unlift_core_value env t
    | QueryTerm (t : term Query.query_term) -> Query.query_eval eval lift_query_value lift_core_value unlift_query_value stringify_term stringify_typ env t
-   | LetTerm t -> Let.let_eval eval env t 
+   | LetTerm t -> Let.let_eval eval env t
 
 
 
@@ -70,23 +70,23 @@ let rec eval (env : value Core.Ir.venv) (term: term) : value = match term with
 (* Everything above this line should eventually be generated from the core + extensions *)
 
 let sample_term1 : term =
-    lift_core_term (IfE 
+    lift_core_term (IfE
             (lift_core_term (BoolE true),
             lift_core_term (IntE 3),
             lift_core_term (IntE 4)))
 
-let sample_term2 : term = 
+let sample_term2 : term =
     lift_let_term
-         (LetE 
+         (LetE
             ("x",
             lift_query_term (CreateCell),
-            
-                lift_let_term (LetE 
+
+                lift_let_term (LetE
                     ("y",
                     lift_query_term (Update (lift_core_term (VarE "x"), sample_term1)),
                     lift_query_term (Query (lift_core_term (VarE "x")) ) ))))
 
 
-let result = eval [] sample_term2 
+let result = eval [] sample_term2
 let _ = print_endline (stringify_typ (typecheck [] sample_term1))
 let _ = print_endline (stringify_value result)

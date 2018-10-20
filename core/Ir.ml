@@ -2,8 +2,8 @@ open Types
 
 type var = string [@@deriving show]
 
-type value [@@extensible_type] 
-type term [@@extensible_type] 
+type value [@@extensible_type]
+type term [@@extensible_type]
 
 
 type ('term, 'typ) core_value =
@@ -11,7 +11,7 @@ type ('term, 'typ) core_value =
   | UnitV
   | BoolV of bool
   | StringV of string
-  | LamV of var * 'typ * 'term [@@extension_of value] 
+  | LamV of var * 'typ * 'term [@@extension_of value]
 
 and ('term, 'typ) core_term =
   | IntE of int
@@ -24,7 +24,7 @@ and ('term, 'typ) core_term =
   | AppE of 'term * 'term
   | IfE of 'term * 'term * 'term
     (*| AssignE of var * ('ext_term, 'ext_type) core_term *)
-[@@deriving show] [@@extension_of term] 
+[@@deriving show] [@@extension_of term]
 
 type 'value venv = (var * 'value) list
 
@@ -34,9 +34,9 @@ type 'typ tenv = (var * 'typ) list
 
 exception TypeError of string
 
-let core_typecheck 
-    (typecheck : 'typ tenv -> 'term -> 'typ) 
-    (lift_core_typ : 'typ core_typ -> 'typ) 
+let core_typecheck
+    (typecheck : 'typ tenv -> 'term -> 'typ)
+    (lift_core_typ : 'typ core_typ -> 'typ)
     (unlift_core_typ : 'typ -> 'typ core_typ option)
     (env : 'typ tenv)
     (term : ('term, 'typ) core_term) : 'typ =
@@ -68,17 +68,17 @@ let core_typecheck
 
 
 
-let core_eval 
+let core_eval
     (eval : 'value  venv -> 'term -> 'value)
     (lift_core_value : ('term, 'typ) core_value -> 'value )
     (unlift_core_value :  'value -> ('term, 'typ) core_value option)
-    (env : 'value venv) 
+    (env : 'value venv)
     (term : ('term, 'typ) core_term) : 'value =
   let ue x = unlift_core_value (eval env x) in
   let e x = eval env x in
   match term with
   | IntE i -> lift_core_value (IntV i)
-  | UnitE -> lift_core_value UnitV 
+  | UnitE -> lift_core_value UnitV
   | BoolE b -> lift_core_value (BoolV b)
   | StringE s -> lift_core_value (StringV s)
   | LamE (v, t, b) -> lift_core_value (LamV (v, t, b))

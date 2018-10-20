@@ -1,4 +1,4 @@
-type 'term let_term = 
+type 'term let_term =
     LetE of Core.Ir.var * 'term * 'term
 
 let let_typecheck
@@ -13,7 +13,7 @@ let let_typecheck
         typecheck  env' n
 
 
-let let_eval 
+let let_eval
   (eval : 'value Core.Ir.venv -> 'term -> 'value )
   (env : 'value Core.Ir.venv) (term : 'term let_term) =
   match term with
