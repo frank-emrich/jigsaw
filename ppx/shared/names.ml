@@ -1,9 +1,9 @@
 
 module Extensions =
 struct
-  let synthesized_extension_type = "synthesized_extension_type"
+  let synthesized_type = "synthesized_type"
 
-  let all = [synthesized_extension_type]
+  let all = [synthesized_type]
 end
 
 

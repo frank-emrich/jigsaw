@@ -2,7 +2,7 @@ let x = 7 + 4
 
 type foo = unit
 
-module CoreLibrary =
+(*module CoreLibrary =
 struct
 
 type 'ext first_extensible_type =
@@ -14,7 +14,7 @@ type ('ext, 'ext_one_extensible_type) second_extensible_type =
    | Bar of int * 'ext_one_extensible_type first_extensible_type
    | ExtSET of 'ext [@extension_point]
 
-end
+end*)
 
 
 module SomeExtensionLibrary =
@@ -23,12 +23,20 @@ type my_first_extension =
    | OneConstructor
    | AnotherConstructor  [@@extension_of first_extensible_type]
 
-type 'ext_first_extensible_type my_second_extension =
-   | FancyConstructor of 'ext_first_extensible_type CoreLibrary.first_extensible_type
+type 'first_extensible_type my_second_extension =
+   | FancyConstructor of 'first_extensible_type
    | HelloThere  [@@extension_of second_extensible_type]
 
 end
 
+
+module AnotherExtensionLibrary =
+struct
+    type another_extension =
+       | Foo
+       | Bar [@@extension_of second_extensible_type]
+
+end
 
 
 module type MYFEATURE =

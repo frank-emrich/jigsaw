@@ -7,39 +7,6 @@ open Parsetree
 
 let ocaml_version = Versions.ocaml_407
 
-module AnalysisResults = struct
-  let raise_info = Jigsaw_ppx_shared.Errors.raise_info
-  type type_param_assoc_entry = string * string option [@@deriving show]
-
-  let type_table = Hashtbl.create 10
-
-  let extension_table = Hashtbl.create 10
-
-  let register_extensible_type type_name ext_constructor ext_type_var =
-    raise_info ("adding extensible type " ^ type_name) ;
-    Hashtbl.add type_table type_name (ext_constructor, ext_type_var)
-
-  (* type_vars is a list of (string  * string option), where the first entry is a name of a type parameter of the type, and
-     the second parameter is the associated extension type to put there  *)
-  let register_type_extension extension_name  extended_type_name  extension_path (type_var_mapping : type_param_assoc_entry list) =
-
-    raise_info
-      ( "adding extension " ^ extension_name ^ " for type "
-      ^ String.concat "." (Longident.flatten extended_type_name)
-      ^ ", current module path is " ^ String.concat "." extension_path
-      ^ "type param map: " ^  (String.concat "," (List.map show_type_param_assoc_entry type_var_mapping))) ;
-    match Hashtbl.find_opt extension_table extended_type_name with
-    | None -> Hashtbl.add extension_table extended_type_name [(extension_name, extension_path, type_var_mapping)]
-    | Some existing_extensions ->
-        Hashtbl.add extension_table extended_type_name
-          ((extension_name, extension_path, type_var_mapping) :: existing_extensions)
-
-  let has_extensible_type extensible_type_name = Hashtbl.mem type_table extensible_type_name
-
-  let get_extensible_type type_name = Hashtbl.find_opt type_table type_name
-
-  let get_type_extensions extended_type_name  = Hashtbl.find_opt extension_table extended_type_name
-end
 
 let current_module : string list ref = ref []
 
@@ -52,9 +19,8 @@ let unloc (loc : 'a Asttypes.loc) = loc.txt
 
 let raise_error = Jigsaw_ppx_shared.Errors.raise_error
 
-let register_extensible_type = AnalysisResults.register_extensible_type
 
-let register_type_extension = AnalysisResults.register_type_extension
+let register_type_extension = Analysis_results.register_type_extension
 
 let handle_constructor ext_points constr =
   let attrs = constr.pcd_attributes in
@@ -69,26 +35,18 @@ let handle_constructor ext_points constr =
       (constr_name, constr_loc, constr_args, constr_res_type_opt) :: ext_points
   | None -> ext_points
 
-let handle_attribute _ attr =
-  let name = unloc (fst attr) in
-  let payload = snd attr in
-  let bad_shape loc =
-    raise_error loc
-      ( "The " ^ Jigsaw_ppx_shared.Names.Attributes.extension_of
-      ^ " attribute should be followed by a single identifier: the name of the type to extend." )
-  in
-  if name = Jigsaw_ppx_shared.Names.Attributes.extension_of then (
-    match payload with
-    | PStr [{pstr_desc= eval_expr; pstr_loc= loc}] -> (
-      match eval_expr with
-      | Pstr_eval ({pexp_desc= Pexp_ident extended_type_name; pexp_loc= _; pexp_attributes= []}, []) ->
-          Some extended_type_name.txt
-      | _ -> bad_shape loc  )
-    | _ -> bad_shape (fst attr).loc )
+let handle_attribute _ (attr_loc, attr_payload) =
+  let name = unloc attr_loc in
+  let loc = attr_loc.loc in
+  if name = Jigsaw_ppx_shared.Names.Attributes.extension_of then
+    let long_id = (Jigsaw_ppx_shared.Payload_manipulation.extract_single_ident_payload loc attr_payload) in
+    let id = String.concat "." (Longident.flatten long_id) in
+    Some id
   else None
 
 (* Does the declared type have a constructor to be used as an extension point *)
-let handle_extensible_type td_record =
+(* Not used at the time, we do not require extensible types to be explicitly declared *)
+(*let handle_extensible_type td_record =
   match td_record.ptype_kind with
   | Ptype_variant constrs -> (
       let type_param_names = List.map (fun (q, _) -> extract_type_var q) td_record.ptype_params in
@@ -115,20 +73,9 @@ let handle_extensible_type td_record =
                declared type is polymorpic over"  )
       | _ ->
           raise_error name_loc "More than one constructor is annotated to be an extension point"  )
-  | _ -> None
+  | _ -> None*)
 
-let map_type_parameter_name_to_extensible_type param : string option =
-  let regexp = Str.regexp "ext_\\(.+\\)" in
-  if Str.string_match regexp param 0 then
-    begin
-    let potential_type_name = (Str.matched_group 1 param) in
-    if AnalysisResults.has_extensible_type potential_type_name then
-      Some potential_type_name
-    else
-      None
-    end
-  else
-    None
+
 
 (* Does the type declaration have an attribute saying that the whole type represents an extension of another type? *)
 let handle_type_extension td_record =
@@ -143,8 +90,7 @@ let handle_type_extension td_record =
         let type_descr = core_t.ptyp_desc in
         match type_descr with
         | Ptyp_var param_name ->
-            let matched_extensible_type = map_type_parameter_name_to_extensible_type param_name in
-            (param_name, matched_extensible_type)
+            param_name
         | _ ->
             raise_error loc "Type parameter does not fit excpected shape"
       in
@@ -155,7 +101,7 @@ let handle_type_extension td_record =
 (* Mapper functions *)
 
 let type_declaration m td_record =
-  match (handle_extensible_type td_record, handle_type_extension td_record) with
+  match (None, handle_type_extension td_record) with
   | None, None -> Ast_mapper.default_mapper.type_declaration m td_record
   | Some _, Some _ ->
       let loc = td_record.ptype_name.loc in
@@ -179,7 +125,6 @@ let module_binding mapper mod_binding =
 (* End mapper functions  *)
 
 let analysis_mapper _config _cookies =
-  print_endline "analysis has been invoked" ;
   {Ast_mapper.default_mapper with type_declaration; attribute; module_binding}
 
 (*let _ = Compiler_libs.Ast_mapper.register "my_mapper" (fun _ -> To_current.copy_mapper my_mapper)*)
