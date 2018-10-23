@@ -23,7 +23,7 @@ let init () =
 let filename_to_module_name  fname =
        fname |> Filename.basename |> Filename.remove_extension |> String.capitalize_ascii
 
-let process_file file =
+let process_file (library, file) =
       let config : Custom_driver.config =
       (* TODO: we could add -I, -L and -g options to populate these fields. *)
       { tool_name    = "migrate_driver"
@@ -36,5 +36,10 @@ let process_file file =
       let boxed_file = Custom_driver.guess_file_kind file in
       (* This is hacky, we may want to do this via cookies *)
       let module_name = filename_to_module_name file in
-      Jigsaw_ppx_analysis.Analysis.current_module := [module_name];
+      let initial_module_path_rev =
+            if library = module_name then 
+                  [module_name]
+            else 
+                  [module_name ; library] in
+      Jigsaw_ppx_analysis.Analysis.current_module := initial_module_path_rev;
       Custom_driver.process_file ~config:config ~output:None  ~output_mode:Null ~embed_errors:false boxed_file

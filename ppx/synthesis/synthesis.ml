@@ -24,7 +24,15 @@ let register_synthesized_name type_name =
   Hashtbl.add synthesized_extension_types type_name type_name
 
 (* Such a list of files would ultimately be obtained from something linke ocamlfind *)
-let files_to_check = ["tests/test_analysis.ml"]
+let files_to_check = [ 
+    ("Core", "../../../core/types.ml");
+    ("Core", "../../../core/ir.ml");
+    ("Let", "../../../extensions/jigsaw-let/let.ml");
+    ("Query", "../../../extensions/jigsaw-query/query.ml");
+    ("Stringify", "../../../features/jigsaw-stringify-feature/stringify.ml");
+    ("Stringify_let", "../../../features/jigsaw-stringify-for-let/stringify_for_let.ml");
+    ("Stringify_query", "../../../features/jigsaw-stringify-for-query/stringify_for_query.ml");
+     ]
 
 
 let make_ghost_location () = Location.in_file !Location.input_name

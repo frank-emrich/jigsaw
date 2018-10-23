@@ -1,4 +1,5 @@
 (executable
   (name jigsaw)
+  (preprocess (pps jigsaw-ppx.synthesis-rewriter ppx_deriving.std ))
   (libraries jigsaw-core jigsaw-query jigsaw-let jigsaw-stringify jigsaw-stringify-query jigsaw-stringify-let)
 )
