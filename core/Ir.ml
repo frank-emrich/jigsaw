@@ -32,6 +32,47 @@ type 'typ tenv = (var * 'typ) list
 
 
 
+(* variant 1: polymorphic types with matching names *)
+module type TYPECHECK =
+sig
+  val typecheck : 'typ tenv -> 'term -> 'typ
+end [@feature_decl typecheck ]
+
+(* variant 2: parameterized module type *)
+module type TYPECHECK2 = functor(D : sig type typ  type term end) ->
+sig
+ val typecheck : D.typ tenv -> D.term -> D.typ
+end [@feature_decl typecheck ]
+
+(* variant 3: just create fake types *)
+module type TYPECHECK3 =
+sig
+ type typ
+ type term
+ val typecheck : typ tenv -> term -> typ
+end [@feature_decl typecheck ]
+
+(* variant 4: use something like [@InjectSynthesizedTypes ] or module%injecttypes *)
+module WithTypes [@InjectSynthesizedTypes ] = (* alternatively: module%injecttypes  *)
+struct
+
+  module type TYPECHECK4 =
+  sig
+  val typecheck : typ tenv -> term -> typ
+  end [@feature_decl typecheck ]
+
+end
+
+
+(* variant 5: just use type names as if they were defined, signature is removed *)
+(*module type TYPECHECK5 =
+sig
+ val typecheck : typ tenv -> term -> typ
+end [@feature_decl typecheck ] *)
+
+
+
+
 exception TypeError of string
 
 let core_typecheck
@@ -65,7 +106,7 @@ let core_typecheck
     | Some (Arrow (t11, t12)), t2 when t11 = t2 -> t12
     | _ -> raise (TypeError "Wrong funcall type") )
   | VarE x -> ( try ListLabels.assoc x env with Not_found -> raise (TypeError ("Variable " ^ x ^ "Not found")) )
-  
+
 
 
 

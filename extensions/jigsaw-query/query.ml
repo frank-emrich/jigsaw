@@ -1,15 +1,3 @@
-(*module type MOTHER =
-sig
-    type overall_ext_type
-    type overall_ext_term
-    type overall_ext_value
-
-    val stringify_overall_ext_type : overall_ext_type -> string
-    val stringify_overall_ext_type : overall_ext_term -> string
-
-end*)
-
-
 
 let store : (int * string) list ref = ref []
 let counter = ref 0
@@ -30,7 +18,7 @@ type 'term query_term =
 
 let query_typecheck
     (typecheck :
-      'typ Core.Ir.tenv -> 'term -> 'ext_typ)
+      'typ Core.Ir.tenv -> 'term -> 'typ)
     (lift_query_typ: query_typ -> 'typ)
     (lift_core_typ: 'typ Core.Types.core_typ -> 'typ)
     (unlift_query_typ : 'typ -> query_typ option)
