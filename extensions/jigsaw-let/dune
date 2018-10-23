@@ -1,4 +1,5 @@
 (library
  (name        let)
  (public_name jigsaw-let)
+ (preprocess (pps jigsaw-ppx.analysis-rewriter ppx_deriving.std ))
  (libraries jigsaw-core))

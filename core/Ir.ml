@@ -65,6 +65,7 @@ let core_typecheck
     | Some (Arrow (t11, t12)), t2 when t11 = t2 -> t12
     | _ -> raise (TypeError "Wrong funcall type") )
   | VarE x -> ( try ListLabels.assoc x env with Not_found -> raise (TypeError ("Variable " ^ x ^ "Not found")) )
+  
 
 
 

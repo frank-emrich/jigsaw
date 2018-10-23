@@ -1,5 +1,6 @@
 type 'term let_term =
     LetE of Core.Ir.var * 'term * 'term
+    [@@extension_of term]
 
 let let_typecheck
     (typecheck :

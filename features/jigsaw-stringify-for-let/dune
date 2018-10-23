@@ -1,4 +1,5 @@
 (library
  (name        stringify_let)
  (public_name jigsaw-stringify-let)
+ (preprocess (pps jigsaw-ppx.analysis-rewriter ppx_deriving.std ))
  (libraries jigsaw-core jigsaw-stringify jigsaw-let))

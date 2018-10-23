@@ -13,4 +13,4 @@
  (modules Test_synthesis)
  (ppx_runtime_libraries jigsaw-ppx.analysis)
  (preprocess (pps jigsaw-ppx.synthesis-rewriter ppx_deriving.std ))
- (libraries ))
+ (libraries test_analysis))

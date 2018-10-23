@@ -1,6 +1,7 @@
 (library
  (name        jigsaw_ppx_synthesis_rewriter)
  (public_name jigsaw-ppx.synthesis-rewriter)
- (modules Custom_driver Run_analysis Synthesis)
+ (modules Custom_driver Run_analysis Synthesis Metaquot_versioning)
  (kind ppx_rewriter)
- (libraries ocaml-migrate-parsetree jigsaw-ppx.analysis jigsaw-ppx.shared))
+ (preprocess (pps ppxlib.metaquot))
+ (libraries ppxlib ocaml-migrate-parsetree jigsaw-ppx.analysis jigsaw-ppx.shared))
