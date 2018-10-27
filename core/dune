@@ -2,4 +2,5 @@
  (name        core)
  (public_name jigsaw-core)
  (preprocess (pps jigsaw-ppx.analysis-rewriter ppx_deriving.std ))
+ (flags :standard -ppx  ".ppx/jigsaw-ppx.analysis-rewriter+ppx_deriving.std/ppx.exe  --as-ppx")
  (libraries ))

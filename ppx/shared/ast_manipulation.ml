@@ -1,6 +1,6 @@
-open Migrate_parsetree
-open Ast_407
-open Parsetree
+(*open Migrate_parsetree
+open Ast_versioning.Ast*)
+open Ast_versioning.Parsetree
 
 
 let extract_single_ident_payload loc payload =
@@ -15,3 +15,13 @@ let extract_single_ident_payload loc payload =
           extended_type_name.txt
       | _ -> bad_shape loc  )
     | _ -> bad_shape loc
+
+
+let attribute_has_name attribute_name (attribute : attribute) =
+  (fst attribute).txt = attribute_name
+
+
+let attribute_has_empty_payload attribute =
+  match snd attribute with
+    | PStr [] -> true
+    |_ -> false

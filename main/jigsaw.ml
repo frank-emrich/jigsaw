@@ -1,4 +1,5 @@
-
+module Types =
+struct
 (* The union of all extensions of the core types *)
 type typ = [%synthesized_type typ]
 
@@ -8,12 +9,30 @@ type term = [%synthesized_type term]
 (* The union of all extensions of the core values *)
 type value = [%synthesized_type value]
 
+end
 
+module IrOperations_Args = 
+struct
+    type term = Types.term
+    type value = Types.value
+    type typ = Types.typ
+    let lift_core_typ = Types.typ_of_core_typ
+    let unlift_core_typ = Types.core_typ_of_typ
+    let lift_core_value = Types.value_of_core_value
+    let unlift_core_value = Types.core_value_of_value
+end
 
+open Types
+module CoreImpls = Core.Ir.IrOperations(IrOperations_Args)
+
+module Typechecking : CoreImpls.TYPECHECK =
+struct
 let rec typecheck env (term : term) = match term with
-    | Ext_term_core_term t -> Core.Ir.core_typecheck typecheck typ_of_core_typ core_typ_of_typ env t
+    | Ext_term_core_term t -> CoreImpls.core_typecheck typecheck env t
     | Ext_term_query_term t -> Query.query_typecheck typecheck typ_of_query_typ typ_of_core_typ query_typ_of_typ  env t
     | Ext_term_let_term t -> Let.let_typecheck typecheck env t
+end 
+
 
 let rec stringify_typ t = match t with
    | Ext_typ_core_typ t -> Stringify.stringify_core_typ stringify_typ t
@@ -30,7 +49,7 @@ let stringify_value (v : value) : string = match v with
 
 
 let rec eval (env : value Core.Ir.venv) (term: term) : value = match term with
-   | Ext_term_core_term t -> Core.Ir.core_eval eval value_of_core_value core_value_of_value env t
+   | Ext_term_core_term t -> CoreImpls.core_eval eval  env t
    | Ext_term_query_term (t : term Query.query_term) -> Query.query_eval eval value_of_query_value value_of_core_value query_value_of_value stringify_term stringify_typ env t
    | Ext_term_let_term t -> Let.let_eval eval env t
 
@@ -60,5 +79,5 @@ let sample_term2 : term =
 
 
 let result = eval [] sample_term2
-let _ = print_endline (stringify_typ (typecheck [] sample_term1))
+let _ = print_endline (stringify_typ (Typechecking.typecheck [] sample_term1))
 let _ = print_endline (stringify_value result)

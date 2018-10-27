@@ -1,9 +1,6 @@
 open Migrate_parsetree
-
-
-open Ast_407
-open Parsetree
-let ocaml_version = Versions.ocaml_407
+open Jigsaw_ppx_shared.Ast_versioning.Ast
+open Jigsaw_ppx_shared.Ast_versioning.Parsetree
 
 let unloc (loc : 'a Asttypes.loc) = loc.txt
 let raise_error = Jigsaw_ppx_shared.Errors.raise_error

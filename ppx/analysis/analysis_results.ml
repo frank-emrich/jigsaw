@@ -9,11 +9,11 @@
     raise_info ("adding extensible type " ^ type_name) ;
     Hashtbl.add type_table type_name (ext_constructor, ext_type_var)*)
 
-  let register_type_extension (extension_name : string)  (extended_type_name : string) (extension_path : string list) (type_parameters : string list) =
+  let register_type_extension (extension_name : string)  (extended_type_name : string) (extension_path : Context.module_path_element list)  (type_parameters : string list) =
     raise_info
       ( "adding extension " ^ extension_name ^ " for type "
       ^ extended_type_name
-      ^ ", current module path is " ^ String.concat "." extension_path
+      ^ ", current module path is " ^ String.concat "." (List.map Context.show_module_path_element extension_path)
       ^ ", type_parameters: " ^  (String.concat "," type_parameters)) ;
     match Hashtbl.find_opt extension_table extended_type_name with
     | None -> Hashtbl.add extension_table extended_type_name [(extension_name, extension_path, type_parameters)]

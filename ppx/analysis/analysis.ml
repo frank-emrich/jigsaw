@@ -1,14 +1,10 @@
 open Migrate_parsetree
-(* We express all transformations in terms of OCaml 4.07 ASTs.
-   Migrate_parsetree makes sure that the ASTs are then converted to the
-   actual OCaml version being executed *)
-open Ast_407
-open Parsetree
+open Jigsaw_ppx_shared.Ast_versioning.Ast
+open Jigsaw_ppx_shared.Ast_versioning.Parsetree
 
-let ocaml_version = Versions.ocaml_407
+let (->-) f g = fun x -> g (f x)
 
 
-let current_module : string list ref = ref []
 
 let extract_type_var core_type =
   match core_type.ptyp_desc with
@@ -18,7 +14,8 @@ let extract_type_var core_type =
 let unloc (loc : 'a Asttypes.loc) = loc.txt
 
 let raise_error = Jigsaw_ppx_shared.Errors.raise_error
-
+let info_message = Jigsaw_ppx_shared.Errors.raise_info
+let debug_message = Jigsaw_ppx_shared.Errors.raise_info
 
 let register_type_extension = Analysis_results.register_type_extension
 
@@ -39,7 +36,7 @@ let handle_attribute _ (attr_loc, attr_payload) =
   let name = unloc attr_loc in
   let loc = attr_loc.loc in
   if name = Jigsaw_ppx_shared.Names.Attributes.extension_of then
-    let long_id = (Jigsaw_ppx_shared.Payload_manipulation.extract_single_ident_payload loc attr_payload) in
+    let long_id = (Jigsaw_ppx_shared.Ast_manipulation.extract_single_ident_payload loc attr_payload) in
     let id = String.concat "." (Longident.flatten long_id) in
     Some id
   else None
@@ -95,10 +92,47 @@ let handle_type_extension td_record =
             raise_error loc "Type parameter does not fit excpected shape"
       in
       let type_param_assoc_list = List.map match_type_parameters type_parameters in
-      register_type_extension extension_name extended_type (List.rev !current_module) type_param_assoc_list ;
+      register_type_extension extension_name extended_type (List.rev !Context.current_module) type_param_assoc_list ;
       Some td_record
 
+
+let remove_injection_attrs_from_functor module_expr =
+  let desc = module_expr.pmod_desc in
+  match desc with
+    | Pmod_functor (name_loced, (Some module_type), result_m_expr) ->
+      let functor_arg_attributes = module_type.pmty_attributes in
+      let injection_attr_name = Jigsaw_ppx_shared.Names.Attributes.inject in
+      let is_injection_attr = Jigsaw_ppx_shared.Ast_manipulation.attribute_has_name injection_attr_name in
+      let non_inject_attributes = List.filter (is_injection_attr ->- not) functor_arg_attributes in
+      let module_type_without_injection_attrs = {module_type with pmty_attributes = non_inject_attributes} in
+      let functor_without_injection_attrs = Pmod_functor (name_loced, (Some module_type_without_injection_attrs), result_m_expr) in
+      {module_expr with pmod_desc = functor_without_injection_attrs}
+    | _ -> failwith "Expected funtor with module type"
+
+
+let add_attributes_to_functor module_expr attributes =
+  let desc = module_expr.pmod_desc in
+  match desc with
+    | Pmod_functor (name_loced, (Some module_type), result_m_expr) ->
+      let existing_attrs = module_type.pmty_attributes in
+      let extended_attrs = existing_attrs @ attributes in
+      let module_type_update = {module_type with pmty_attributes = extended_attrs} in
+      let functor_updated = Pmod_functor (name_loced, (Some module_type_update), result_m_expr) in
+      {module_expr with pmod_desc = functor_updated}
+    | _ -> failwith "Expected funtor with module type"
+
 (* Mapper functions *)
+
+(*let module_expr m m_expr =
+  let handle_non_injection_functor () =
+    Context.push_functor mod_name;
+    let result = Ast_mapper.default_mapper.module_expr m m_expr in
+    Context.pop_module;
+
+  let descr = m_expr.pmod_desc in
+  match descr with
+    
+    | _ -> Ast_mapper.default_mapper.module_expr m m_expr*)
 
 let type_declaration m td_record =
   match (None, handle_type_extension td_record) with
@@ -117,14 +151,52 @@ let attribute m attr =
 
 let module_binding mapper mod_binding =
   let mod_name = unloc mod_binding.pmb_name in
-  current_module := mod_name :: !current_module ;
-  let result = Ast_mapper.default_mapper.module_binding mapper mod_binding in
-  current_module := List.tl !current_module ;
-  result
+  let mod_expr = mod_binding.pmb_expr in
+  let mod_expr_desc = mod_expr.pmod_desc in
+  match mod_expr_desc with
+    | Pmod_structure _ ->
+      Context.push_plain_module mod_name;
+      let result = Ast_mapper.default_mapper.module_binding mapper mod_binding in
+      Context.pop_module ();
+      result
+    | Pmod_functor (name_loced, (Some module_type), result_m_expr) ->
+      (* Look for functor annotated with [@inject] *)
+      let functor_arg_attributes = module_type.pmty_attributes in
+      let injection_attr_name = Jigsaw_ppx_shared.Names.Attributes.inject in
+      let is_injection_attr = Jigsaw_ppx_shared.Ast_manipulation.attribute_has_name injection_attr_name in
+      let inject_attributes = List.filter is_injection_attr functor_arg_attributes in
+      begin match inject_attributes with
+        | [] -> 
+          Context.push_functor mod_name;
+          let result = Ast_mapper.default_mapper.module_binding mapper mod_binding in
+          Context.pop_module ();
+          result
+        | [inject_attr] -> 
+          if Jigsaw_ppx_shared.Ast_manipulation.attribute_has_empty_payload inject_attr then
+            (let argument_elements = Injection_functors.handle_injection_functor module_type in
+            (* We remove the injection attributes so the default mapper does not call our fail-on-extensibility-attributes function on them *)
+            let mod_binding_no_inject_attrs = {mod_binding with pmb_expr = remove_injection_attrs_from_functor mod_expr } in
+            Context.push_injection_functor mod_name argument_elements;
+            let result = Ast_mapper.default_mapper.module_binding mapper mod_binding_no_inject_attrs in
+            let result_with_inj_attrs = {result with pmb_expr = add_attributes_to_functor result.pmb_expr [inject_attr] } in
+            Context.pop_module ();
+            result_with_inj_attrs)
+          else
+            raise_error (fst inject_attr).loc ("Attribute " ^ injection_attr_name ^ " must not have playload ")
+        | _ -> raise_error name_loced.loc ("Encountered multiple attributes named " ^ injection_attr_name)
+      end
+    | _ ->
+      (* We may die here on certain kinds of module bindings that we don't want *)
+      Ast_mapper.default_mapper.module_binding mapper mod_binding 
+
 
 (* End mapper functions  *)
 
 let analysis_mapper _config _cookies =
+  print_endline "analysis include dirs:";
+  List.iter print_endline !Clflags.include_dirs;
+  let package = match !Clflags.for_package with | Some p -> p | None -> "None" in   
+  print_endline ("analysis for package:"  ^ package);
   {Ast_mapper.default_mapper with type_declaration; attribute; module_binding}
 
 (*let _ = Compiler_libs.Ast_mapper.register "my_mapper" (fun _ -> To_current.copy_mapper my_mapper)*)
