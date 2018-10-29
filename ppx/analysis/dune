@@ -1,16 +1,8 @@
 (library
- (name        jigsaw_ppx_analysis)
- (public_name jigsaw-ppx.analysis)
- (modules Analysis Analysis_results Injection_functors Context)
- (flags (:standard -w a))
+ (name        jigsaw_ppx_analysis_rewriter)
+ (public_name jigsaw-ppx.analysis-rewriter)
  (preprocess (pps ppx_deriving.std))
+ (kind ppx_rewriter)
  (libraries ocaml-migrate-parsetree jigsaw-ppx.shared str))
 
 
-
-(library
- (name        jigsaw_ppx_analysis_rewriter)
- (public_name jigsaw-ppx.analysis-rewriter)
- (modules Analysis_registration)
- (kind ppx_rewriter)
- (libraries ocaml-migrate-parsetree jigsaw-ppx.analysis))

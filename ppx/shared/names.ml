@@ -2,8 +2,9 @@
 module Extensions =
 struct
   let synthesized_type = "synthesized_type"
+  let first_stage_marker = "misconfiguration__you_must_enable_staged_preprocessing"
 
-  let all = [synthesized_type]
+  let all = [synthesized_type ; first_stage_marker]
 end
 
 

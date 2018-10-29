@@ -15,7 +15,10 @@ build: [
 depends: [
   "dune" {build}
   "ocaml-migrate-parsetree"
-  
+  "yojson"
+  "ppx_deriving"
+  "ppx_deriving_yojson"
+  "batteries"
 ]
 
 
