@@ -67,7 +67,7 @@ let validate_lift_function_decl ctx previous loc function_name function_type ext
     let function_type_loc = function_type.ptyp_loc in
     let extension_identifier = match Context.get_extensions_by_unqualified_name ctx extended_type type_extension with
       | [] -> E.raise_error loc (Printf.sprintf "No extension %s of type %s known" type_extension extended_type)
-      | [ext] -> fst ext
+      | [ext] -> ext.te_extension_id
       | _ -> E.raise_error loc (Printf.sprintf "There is more than one extension of %s with (unqualified) name %s" extended_type type_extension) in
     match function_type_desc with
       | Ptyp_arrow (Nolabel, from_type, to_type) ->
@@ -90,7 +90,7 @@ let validate_unlift_function_decl ctx previous loc function_name function_type e
     let function_type_loc = function_type.ptyp_loc in
     let extension_identifier = match Context.get_extensions_by_unqualified_name ctx extended_type type_extension with
       | [] -> E.raise_error loc (Printf.sprintf "No extension %s of type %s known" type_extension extended_type)
-      | [ext] -> fst ext
+      | [ext] -> ext.te_extension_id
       | _ -> E.raise_error loc (Printf.sprintf "There is more than one extension of %s with (unqualified) name %s" extended_type type_extension) in
     match function_type_desc with
       | Ptyp_arrow (Nolabel, from_type, to_type) ->

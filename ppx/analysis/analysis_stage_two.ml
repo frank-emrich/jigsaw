@@ -231,7 +231,7 @@ let build_context _config cookies =
   let (work_in_progress_data, work_in_progress_files) =
     P.load_work_in_progress_analysis_data_if_existing cwd current_library current_file in
 
-  Context.create current_library analysis_data work_in_progress_data work_in_progress_files
+  Context.create current_library current_file analysis_data work_in_progress_data work_in_progress_files
 
 
 let save_context _config cookies ctx =
@@ -252,10 +252,11 @@ let actual_mapper ctx : Ast_mapper.mapper =
   }
 
 let toplevel_structure config cookies _ strct =
+
   E.debug "toplevel structure begin";
   let ctx = build_context config cookies in
 
-  let strct_without_first_stage_marker = [] (*List.filter (AM.is_first_stage_marker_extension ->- not) strct*)  in
+  let strct_without_first_stage_marker = List.filter (AM.is_first_stage_marker_extension ->- not) strct  in
   let m = actual_mapper ctx in
 
   let result = structure ctx m strct_without_first_stage_marker in

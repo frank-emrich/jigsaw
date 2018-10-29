@@ -1,6 +1,6 @@
 
 open Jigsaw_ppx_shared.Ast_versioning.Ast
-open Jigsaw_ppx_shared.Ast_versioning.Parsetree
+(*open Jigsaw_ppx_shared.Ast_versioning.Parsetree*)
 
 (*
 type stage =

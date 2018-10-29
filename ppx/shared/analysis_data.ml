@@ -30,14 +30,18 @@ type module_path_element =
   | ModulePathInjectionFunctor of string * injection_arg_element list
     [@@deriving show, yojson]
 
-type extensible_type_info = unit
+type extensible_type_info = string (* defining file *)
   [@@deriving show, yojson]
 
 type extensible_type_seq = (string * extensible_type_info) list (* name -> extensible_type_info *)
   [@@deriving show, yojson]
 
 
-type type_extension_info = (type_extension_id * string list) (* extension id, type variables *)
+type type_extension_info = {
+  te_extension_id : type_extension_id;
+  te_defining_file : string;
+  te_type_parameters : string list
+}(* extension id, defining file,  type variables *)
   [@@deriving show, yojson]
 
 type type_extension_seq = (extensible_type_id * type_extension_info list) list (* extended name -> [type_extension_info] *)
@@ -57,7 +61,7 @@ type t = {
 type data = {
   extensible_types : extensible_type_seq;
   extensions : type_extension_seq
-}
+} [@@deriving show]
 
 let create (id : data) : t = {
   types = Utils.string_map_of_seq  id.extensible_types;
@@ -82,6 +86,6 @@ let get_extensions_by_unqualified_name
     (extensible_type_name : extensible_type_id)
     (extension_unqualified_name : string) : type_extension_info list =
   Errors.check (has_extensible_type ad extensible_type_name);
-  let has_desired_name ext_info = Longident.last (fst ext_info) = extension_unqualified_name in
+  let has_desired_name ext_info = Longident.last ext_info.te_extension_id = extension_unqualified_name in
   let extensions = get_extensions_of_type ad extensible_type_name in
   List.filter has_desired_name extensions

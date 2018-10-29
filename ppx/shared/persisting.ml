@@ -10,18 +10,20 @@ type persisted_data = {
    per_files : string list;
    per_extensible_types_map : Analysis_data.extensible_type_seq;
    per_type_extensions_map : Analysis_data.type_extension_seq
-} [@@deriving yojson]
+} [@@deriving show,yojson]
 
 
 
 let load_from_library_file path =
   let json = Yojson.Safe.from_file path in
   let data_result  = persisted_data_of_yojson json in
+  Errors.debug ("reading file" ^ path);
   match data_result with
     | Error msg ->
       Errors.raise_error_noloc ("Error while loading analysis data from " ^ path ^ " : " ^ msg)
     | Ok (data : persisted_data) ->
       Errors.debug ("Successfully loaded file " ^ path);
+      Errors.debug (show_persisted_data data);
       data
 
 let get_file_name_for_library top_library =
@@ -32,6 +34,7 @@ let is_extension_json_file file_name =
   Str.string_match regexp file_name 0
 
 let load_from_include_folder folder_path : (persisted_data * string) list =
+  Errors.debug ("reading folder " ^ folder_path);
   if ( Sys.file_exists folder_path && Sys.is_directory folder_path) then
     let folder_contents = Sys.readdir folder_path in
     Array.fold_left (fun acc name ->
@@ -42,12 +45,12 @@ let load_from_include_folder folder_path : (persisted_data * string) list =
         acc
     ) [] folder_contents
   else
-    failwith ( folder_path ^ " is not a folder")
+    []
 
 (* public *)
 
 let load_analysis_data current_top_library folders : Analysis_data.data =
-  let resuls= List.concat (List.map load_from_include_folder folders) in
+  let resuls = List.concat (List.map load_from_include_folder folders) in
   List.fold_left (fun acc_data (cur_persisted_data, cur_persited_data_file) ->
     if cur_persisted_data.per_library = current_top_library then
       Errors.raise_error_noloc (Printf.sprintf "The extensbility information currently being loaded from file %s is for library %s,
@@ -61,28 +64,54 @@ let load_analysis_data current_top_library folders : Analysis_data.data =
       }
   ) {Analysis_data.extensible_types = []; Analysis_data.extensions = []} resuls
 
-let load_work_in_progress_analysis_data_if_existing base_folder top_library_name current_file_name =
+let extensible_type_not_from file ( (_, ext_type_info) : string * Analysis_data.extensible_type_info) =
+  not (ext_type_info = file)
+
+let type_extension_not_from file ( (name, extensions) : string * Analysis_data.type_extension_info list) =
+  let filtered_extensions = List.filter (fun ext -> not (ext.Analysis_data.te_defining_file = file)) extensions in
+  name, filtered_extensions
+
+let remove_extensions_defined_in file (seq : Analysis_data.type_extension_seq) =
+  let seq' = List.map (type_extension_not_from file) seq in
+  List.filter ( fun (_, extensions) -> not (extensions = [])) seq'
+
+let load_work_in_progress_analysis_data_if_existing base_folder top_library_name current_file_name : (Analysis_data.data * string list) =
+  Errors.debug ("base_folder: " ^ base_folder);
   let file_to_read = get_file_name_for_library top_library_name in
   let load_path = Filename.concat base_folder file_to_read in
-  if Sys.file_exists load_path then
-    begin
-    let pdata = load_from_library_file load_path in
-    let previous_files = pdata.per_files in
-    let updates_files = current_file_name :: pdata.per_files in
-    if List.mem  current_file_name previous_files then
-      Errors.raise_error_noloc (Printf.sprintf "The file %s already contains analysis data for the  file that we are
-        currently processing (%s). This indicates not cleaning up after the last compilation" load_path current_file_name)
-    else
-      (({
-        extensible_types = pdata.per_extensible_types_map;
-        extensions = pdata.per_type_extensions_map;
-      }, updates_files) : Analysis_data.data * string list )
-    end
-  else
-    (({
-      extensible_types = [];
-      extensions = [];
-    }, [current_file_name]) : Analysis_data.data * string list )
+  let wip_data =
+    if Sys.file_exists load_path then
+      begin
+      let pdata = load_from_library_file load_path in
+      let previous_files = pdata.per_files in
+      let updated_files = current_file_name :: pdata.per_files in
+      let existing_files_contain_current = List.mem  current_file_name previous_files in
+      let first_existing_file_is_current =
+        match previous_files with
+          | f :: _ when f = current_file_name -> true
+          | _ -> false in
+      Errors.debug ("previous files: " ^ String.concat ", " previous_files);
+      match existing_files_contain_current, first_existing_file_is_current with
+        | (true, false) ->
+          Errors.raise_error_noloc "It seems like the dependency graph between modules changed. Please perform a clean rebuild"
+        | (true, true) ->
+          (({
+            extensible_types = List.filter (extensible_type_not_from current_file_name) pdata.per_extensible_types_map;
+            extensions = remove_extensions_defined_in current_file_name pdata.per_type_extensions_map;
+          }, previous_files) : Analysis_data.data * string list )
+        | (false, _) ->
+          (({
+            extensible_types = pdata.per_extensible_types_map;
+            extensions = pdata.per_type_extensions_map;
+          }, updated_files) : Analysis_data.data * string list )
+        end
+      else
+        (({
+          extensible_types = [];
+          extensions = [];
+        }, [current_file_name]) : Analysis_data.data * string list ) in
+  Errors.debug ("Loaded wip data: " ^ Analysis_data.show_data (fst wip_data));
+  wip_data
 
 
 let persist_data

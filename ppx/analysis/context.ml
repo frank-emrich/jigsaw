@@ -6,6 +6,7 @@ module U = Jigsaw_ppx_shared.Utils
 type t = {
   analysis_data : AD.t;
   current_module : AD.module_path_element list ref; (* used as stack, most recent module at head *)
+  current_file : string;
   files_in_current_library : string list;
   extensible_types_table : (AD.extensible_type_id, AD.extensible_type_info) Hashtbl.t;
   type_extension_table : (AD.extensible_type_id, AD.type_extension_info list)  Hashtbl.t;
@@ -15,12 +16,14 @@ type t = {
 
 let create
   (library_name : string)
+  (current_file : string)
   (analysis_data : AD.t)
   (wip_data : AD.data)
   (wip_files : string list) : t =
   {
     analysis_data;
     current_module =  ref [(AD.ModulePathPlain library_name)];
+    current_file;
     files_in_current_library = wip_files;
     extensible_types_table = Jigsaw_ppx_shared.Utils.hashtbl_of_seq wip_data.extensible_types;
     type_extension_table = Jigsaw_ppx_shared.Utils.hashtbl_of_seq wip_data.extensions;
@@ -28,6 +31,8 @@ let create
   }
 
 (* Tracking currently processed module *)
+
+let get_current_file (ctx : t) = ctx.current_file
 
 let push_plain_module (ctx : t) name =
   ctx.current_module := (AD.ModulePathPlain name) :: !(ctx.current_module)
@@ -58,7 +63,7 @@ let current_simple_module_path_to_list (ctx : t) =
 
 
 let register_extensible_type (ctx : t) (name : AD.extensible_type_id) =
-  Hashtbl.add ctx.extensible_types_table name ()
+  Hashtbl.add ctx.extensible_types_table name (get_current_file ctx)
 
 let register_type_extension
   (ctx : t)
@@ -69,13 +74,18 @@ let register_type_extension
     ( "adding extension " ^ AD.show_tei extension ^ " for type "
     ^ AD.show_tei extension
     ^ ", type_parameters: " ^  (String.concat "," type_parameters)) ;
+  let extension_info : AD.type_extension_info = {
+      te_extension_id = extension;
+      te_defining_file = get_current_file ctx;
+      te_type_parameters = type_parameters;
+    } in
   match Hashtbl.find_opt ctx.type_extension_table extended_type  with
     | None ->
       Hashtbl.add ctx.type_extension_table extended_type
-        [(extension, type_parameters)]
+        [extension_info]
     | Some existing_extensions ->
         Hashtbl.add ctx.type_extension_table extended_type
-          ((extension, type_parameters) :: existing_extensions)
+          (extension_info :: existing_extensions)
 
 
 
@@ -104,7 +114,7 @@ let get_extensions_by_unqualified_name
     (extensible_type_name : AD.extensible_type_id)
     (extension_unqualified_name : string) : AD.type_extension_info list =
   E.check (has_extensible_type ctx extensible_type_name);
-  let has_desired_name ext_info = Longident.last (fst ext_info) = extension_unqualified_name in
+  let has_desired_name ext_info = (Longident.last ext_info.AD.te_extension_id = extension_unqualified_name) in
   let extensions = get_extensions_of_type ctx extensible_type_name in
   List.filter has_desired_name extensions
 
