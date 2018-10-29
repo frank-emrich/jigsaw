@@ -1,6 +1,6 @@
 (library
  (name        query)
  (public_name jigsaw-query)
- (preprocess (pps jigsaw-ppx.analysis-rewriter ppx_deriving.std ))
- (flags (:standard -w a))
+  (preprocess (pps  jigsaw-ppx.analysis-rewriter ppx_deriving.std ))
+ (flags :standard -ppx ".ppx/jigsaw-ppx.analysis-rewriter+ppx_deriving.std/ppx.exe --as-ppx")
  (libraries jigsaw-core jigsaw-stringify))

@@ -5,9 +5,10 @@ available: [
 ]
 
 build: [
+  [ "dune" "clean" ]
   [ "dune" "build" ]
+  [ "bash" "patch_install_file.sh" "core" "%{name}%.install" ]
 ]
-
 
 
 

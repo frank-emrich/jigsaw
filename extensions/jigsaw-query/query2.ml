@@ -1,6 +1,6 @@
 (* variant of query.ml where we provide some info via a functor *)
 
-
+(*
 let store : (int * string) list ref = ref []
 let counter = ref 0
 
@@ -81,3 +81,4 @@ struct
 
 end
 
+*)

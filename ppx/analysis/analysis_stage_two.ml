@@ -1,4 +1,4 @@
-open Migrate_parsetree
+(*open Migrate_parsetree*)
 open Jigsaw_ppx_shared.Ast_versioning.Ast
 open Jigsaw_ppx_shared.Ast_versioning.Parsetree
 
@@ -213,16 +213,8 @@ let structure (_ctx : Context.t) = Ast_mapper.default_mapper.structure
 (* End mapper functions  *)
 
 
-let get_library_name cookies =
-  match Driver.get_cookie cookies "library-name" Jigsaw_ppx_shared.Ast_versioning.ocaml_version with
-    | None -> E.raise_error_noloc "No cookie named library-name was passed"
-    | Some lib_expr ->
-      let lid = Jigsaw_ppx_shared.Ast_manipulation.extract_single_ident_expr lib_expr in
-      String.concat "." (Longident.flatten lid)
-
-let build_context _config cookies =
+let build_context _config _cookies current_library =
   let cwd = Sys.getcwd () in
-  let current_library = get_library_name cookies in
   let current_file = !Location.input_name in
   let include_dirs = !Clflags.include_dirs in
 
@@ -234,10 +226,10 @@ let build_context _config cookies =
   Context.create current_library current_file analysis_data work_in_progress_data work_in_progress_files
 
 
-let save_context _config cookies ctx =
+let save_context _config _cookies ctx =
   let (analysis_data_of_context, files_in_current_context) = Context.export_data ctx in
   let cwd = Sys.getcwd () in
-  let current_library = get_library_name cookies in
+  let current_library = Context.get_current_library ctx in
   P.persist_data cwd current_library analysis_data_of_context files_in_current_context
 
 
@@ -254,12 +246,22 @@ let actual_mapper ctx : Ast_mapper.mapper =
 let toplevel_structure config cookies _ strct =
 
   E.debug "toplevel structure begin";
-  let ctx = build_context config cookies in
 
-  let strct_without_first_stage_marker = List.filter (AM.is_first_stage_marker_extension ->- not) strct  in
+  let (marker_items, strct_without_marker) = List.partition AM.is_first_stage_marker_extension strct in
+  let library_name = match marker_items with
+    | [first_stage_marker_item] ->
+      begin match AM.get_library_name_from_first_stage_marker_extension first_stage_marker_item with
+        | Some name -> name
+        | None -> E.raise_error_noloc "The first stage marker is ill-formed, it does not contain the library name"
+      end
+    | _ -> E.raise_error_noloc "There should be exactly one item in the top-level structure which has been marked by
+          the first stage. This looks like a misconfiguration" in
+
+  let ctx = build_context config cookies library_name in
+
   let m = actual_mapper ctx in
 
-  let result = structure ctx m strct_without_first_stage_marker in
+  let result = structure ctx m strct_without_marker in
   E.debug "toplevel structure end";
   save_context config cookies ctx;
   result

@@ -13,8 +13,14 @@ struct
   let extension_point = "extension_point"
   let extension_of = "extension_of"
   let inject = "inject"
+  let library_name = "currently-compiled-library-name"
 
-  let all = [extension_point ; extension_of ; inject]
+  let all = [extension_point ; extension_of ; inject; library_name]
+end
+
+module Cookies =
+struct
+  let library_name = "library-name"
 end
 
 let lowercase_ident = "\\([a-z][0-9a-zA-Z_']*\\)"

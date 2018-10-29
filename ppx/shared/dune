@@ -2,4 +2,4 @@
  (name        jigsaw_ppx_shared)
  (public_name jigsaw-ppx.shared)
  (preprocess (pps ppx_deriving.std ppx_deriving_yojson))
- (libraries ocaml-migrate-parsetree str yojson ppx_deriving_yojson.runtime batteries))
+ (libraries ppxlib ocaml-migrate-parsetree str yojson ppx_deriving_yojson.runtime))

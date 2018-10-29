@@ -7,6 +7,7 @@ type t = {
   analysis_data : AD.t;
   current_module : AD.module_path_element list ref; (* used as stack, most recent module at head *)
   current_file : string;
+  current_library : string;
   files_in_current_library : string list;
   extensible_types_table : (AD.extensible_type_id, AD.extensible_type_info) Hashtbl.t;
   type_extension_table : (AD.extensible_type_id, AD.type_extension_info list)  Hashtbl.t;
@@ -24,6 +25,7 @@ let create
     analysis_data;
     current_module =  ref [(AD.ModulePathPlain library_name)];
     current_file;
+    current_library = library_name;
     files_in_current_library = wip_files;
     extensible_types_table = Jigsaw_ppx_shared.Utils.hashtbl_of_seq wip_data.extensible_types;
     type_extension_table = Jigsaw_ppx_shared.Utils.hashtbl_of_seq wip_data.extensions;
@@ -33,6 +35,8 @@ let create
 (* Tracking currently processed module *)
 
 let get_current_file (ctx : t) = ctx.current_file
+
+let get_current_library (ctx : t) = ctx.current_library
 
 let push_plain_module (ctx : t) name =
   ctx.current_module := (AD.ModulePathPlain name) :: !(ctx.current_module)

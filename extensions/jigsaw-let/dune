@@ -1,5 +1,6 @@
 (library
  (name        let)
  (public_name jigsaw-let)
- (preprocess (pps jigsaw-ppx.analysis-rewriter ppx_deriving.std ))
+ (preprocess (pps  jigsaw-ppx.analysis-rewriter ppx_deriving.std ))
+ (flags :standard -ppx ".ppx/jigsaw-ppx.analysis-rewriter+ppx_deriving.std/ppx.exe --as-ppx")
  (libraries jigsaw-core))
