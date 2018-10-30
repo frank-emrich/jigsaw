@@ -5,13 +5,13 @@ open Jigsaw_ppx_shared.Ast_versioning.Parsetree
 
 module E = Jigsaw_ppx_shared.Errors
 
-(* This implements the identity-mapper (without copying).
-   The analysis rewriter is only usable in the "second stage", when it is invoked by ocamlc or ocamlopt directly *)
+(* In the first stage, we do two things:
+    1. Add an extension to the AST whose only purpose is that it will break the compilation unless the second stage removes it.
+    This helps us find mis-configurations where the compiler is run without the appropriate -ppx flag
+    2. We embed the name of the currently compiled library into the AST so the second stage can read it *)
 
 let id2 _ x = x
 
-(* TODO: add an extension to the toplevel module so that things break unless
-   the second stage is actually executed (and removes the dummy extension) *)
 
 
 let get_library_name cookies =

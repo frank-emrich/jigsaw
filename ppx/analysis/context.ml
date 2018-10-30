@@ -67,6 +67,7 @@ let current_simple_module_path_to_list (ctx : t) =
 
 
 let register_extensible_type (ctx : t) (name : AD.extensible_type_id) =
+  E.info ("registered extensible type " ^ name);
   Hashtbl.add ctx.extensible_types_table name (get_current_file ctx)
 
 let register_type_extension

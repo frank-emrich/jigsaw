@@ -20,7 +20,7 @@ let extract_type_var core_type =
 let unloc (loc : 'a Asttypes.loc) = loc.txt
 
 
-
+(*
 let handle_constructor ext_points constr =
   let attrs = constr.pcd_attributes in
   let is_extension_attr attr = unloc (fst attr) = Jigsaw_ppx_shared.Names.Attributes.extension_point in
@@ -34,6 +34,8 @@ let handle_constructor ext_points constr =
       (constr_name, constr_loc, constr_args, constr_res_type_opt) :: ext_points
   | None -> ext_points
 
+*)
+
 let handle_attribute _ (attr_loc, attr_payload) =
   let name = unloc attr_loc in
   let loc = attr_loc.loc in
@@ -43,38 +45,49 @@ let handle_attribute _ (attr_loc, attr_payload) =
     Some id
   else None
 
+
+let check_attr_payload_empty (attr : attribute) =
+  if AM.attribute_has_empty_payload attr then
+    ()
+  else
+    let attr_name = unloc (fst attr) in
+    E.raise_error (fst attr).loc ("Attribute " ^ attr_name ^ " should not have a payload")
+
+let check_no_type_parameters (td_record : type_declaration) =
+  match td_record.ptype_params with
+    | [] -> ()
+    | _ -> E.raise_error td_record.ptype_loc "Type parameters not supported here"
+
 (* Does the declared type have a constructor to be used as an extension point *)
 (* Not used at the time, we do not require extensible types to be explicitly declared *)
-(*let handle_extensible_type td_record =
+let handle_extensible_type ctx (td_record : type_declaration) =
   match td_record.ptype_kind with
-  | Ptype_variant constrs -> (
-      let type_param_names = List.map (fun (q, _) -> extract_type_var q) td_record.ptype_params in
-      let declared_type_name = unloc td_record.ptype_name in
-      let name_loc = td_record.ptype_name.loc in
-      let extension_points = List.fold_left handle_constructor [] constrs in
-      match extension_points with
+  | Ptype_abstract ->
+    let ext_attr_name = Jigsaw_ppx_shared.Names.Attributes.extensible_type in
+    let extensible_type_attrs = List.filter (AM.attribute_has_name ext_attr_name) td_record.ptype_attributes in
+    begin match extensible_type_attrs with
       | [] -> None
-      | [(ext_constr_name, ext_constr_loc, ext_constr_args, ext_constr_res_type)] -> (
-        match (ext_constr_res_type, ext_constr_args) with
-        | Some ct, _ ->
-            raise_error ct.ptyp_loc "Extension point must not have GADT type"
-        | _, Pcstr_record _ ->
-            raise_error ext_constr_loc "Extension point must not have record type" ;
-        | _, Pcstr_tuple [] | _, Pcstr_tuple (_ :: _ :: _) ->
-            raise_error ext_constr_loc "Extension point constructor must have single argument"
-        | _, Pcstr_tuple [{ptyp_desc= Ptyp_var ext_constr_type_var; ptyp_loc= _; ptyp_attributes= _}]
-          when List.mem ext_constr_type_var type_param_names ->
-            register_extensible_type declared_type_name ext_constr_name ext_constr_type_var ;
-            Some td_record
-        | _ ->
-            raise_error ext_constr_loc
-              "Extension point constructor must accept single type argument, which is a type variable that the \
-               declared type is polymorpic over"  )
+      | [attr] ->
+        check_attr_payload_empty attr;
+        check_no_type_parameters td_record;
+        let declared_type_name = unloc td_record.ptype_name in
+        if Context.has_extensible_type ctx declared_type_name then
+          E.raise_error (fst attr).loc ("There already exists an extensible type named " ^ declared_type_name )
+        else
+          (Context.register_extensible_type ctx declared_type_name;
+          Some td_record)
       | _ ->
-          raise_error name_loc "More than one constructor is annotated to be an extension point"  )
-  | _ -> None*)
+        E.raise_error td_record.ptype_loc ("Found multiple attributes named " ^  ext_attr_name)
+    end
+  | _ -> None
 
 
+let check_not_inside_of_injection_functor  ctx loc =
+  if Context.current_module_path_is_simple ctx then
+    ()
+  else
+    E.raise_error loc "This type declaration is inside of an injection functor, which is not allowed.
+                        Refer to extensible types by using polymorphic variables with the same name as the desired extensible type"
 
 (* Does the type declaration have an attribute saying that the whole type represents an extension of another type? *)
 let handle_type_extension ctx type_decl =
@@ -82,6 +95,7 @@ let handle_type_extension ctx type_decl =
   match extension_of with
   | None -> None
   | Some extended_type ->
+      check_not_inside_of_injection_functor ctx type_decl.ptype_loc;
       let extension_name = unloc type_decl.ptype_name in
       let type_parameters = List.map fst type_decl.ptype_params in
       let match_type_parameters core_t =
@@ -153,7 +167,7 @@ let add_attributes_to_functor module_expr attributes =
     | _ -> Ast_mapper.default_mapper.module_expr m m_expr*)
 
 let type_declaration (ctx : Context.t) m type_decl =
-  match (None, handle_type_extension ctx type_decl) with
+  match (handle_extensible_type ctx type_decl, handle_type_extension ctx type_decl) with
   | None, None -> Ast_mapper.default_mapper.type_declaration m type_decl
   | Some _, Some _ ->
       let loc = type_decl.ptype_name.loc in
@@ -251,11 +265,11 @@ let toplevel_structure config cookies _ strct =
   let library_name = match marker_items with
     | [first_stage_marker_item] ->
       begin match AM.get_library_name_from_first_stage_marker_extension first_stage_marker_item with
-        | Some name -> name
+        | Some name -> String.capitalize_ascii name
         | None -> E.raise_error_noloc "The first stage marker is ill-formed, it does not contain the library name"
       end
     | _ -> E.raise_error_noloc "There should be exactly one item in the top-level structure which has been marked by
-          the first stage. This looks like a misconfiguration" in
+          the first stage. This looks like a misconfiguration." in
 
   let ctx = build_context config cookies library_name in
 
