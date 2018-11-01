@@ -224,6 +224,18 @@ let module_binding (ctx : Context.t) mapper mod_binding =
 
 let structure (_ctx : Context.t) = Ast_mapper.default_mapper.structure
 
+let structure_item (ctx : Context.t) rec_mapper strct_item =
+  let desc = strct_item.pstr_desc in
+  let default () = Ast_mapper.default_mapper.structure_item rec_mapper strct_item in
+  match desc with
+    | Pstr_modtype mt_decl ->
+      print_endline "found modtype";
+      begin match Features.handle_feature_decl ctx mt_decl with
+        | Some mt_decl' ->
+          {strct_item with pstr_desc = Pstr_modtype mt_decl'}
+        | None -> default ()
+      end
+    | _ -> default ()
 (* End mapper functions  *)
 
 
@@ -255,6 +267,7 @@ let actual_mapper ctx : Ast_mapper.mapper =
     attribute = attribute ctx;
     module_binding = module_binding ctx;
     structure = structure ctx;
+    structure_item = structure_item ctx;
   }
 
 let toplevel_structure config cookies _ strct =

@@ -24,3 +24,10 @@ let check condition : unit =
 let string_of_expression (expr : Ast_versioning.Parsetree.expression) =
   let ppxlib_versioned_expr = Ast_versioning.expression_to_ppxlib expr in
   Ppxlib_ast.Pprintast.string_of_expression ppxlib_versioned_expr
+
+let print_core_type fmt ct =
+  let ppxlib_versioned_type = Ast_versioning.core_type_to_ppxlib ct in
+  Ppxlib_ast.Pprintast.core_type fmt ppxlib_versioned_type
+
+let string_of_core_type ct =
+  Format.asprintf "%a" print_core_type ct

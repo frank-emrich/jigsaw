@@ -1,3 +1,5 @@
+open Jigsaw_ppx_shared.Ast_versioning.Parsetree
+
 
 module AD = Jigsaw_ppx_shared.Analysis_data
 module E = Jigsaw_ppx_shared.Errors
@@ -11,6 +13,7 @@ type t = {
   files_in_current_library : string list;
   extensible_types_table : (AD.extensible_type_id, AD.extensible_type_info) Hashtbl.t;
   type_extension_table : (AD.extensible_type_id, AD.type_extension_info list)  Hashtbl.t;
+  feature_decl_table : (AD.feature_id, AD.feature_decl_info list)  Hashtbl.t;
 }
 
 
@@ -29,7 +32,7 @@ let create
     files_in_current_library = wip_files;
     extensible_types_table = Jigsaw_ppx_shared.Utils.hashtbl_of_seq wip_data.extensible_types;
     type_extension_table = Jigsaw_ppx_shared.Utils.hashtbl_of_seq wip_data.extensions;
-
+    feature_decl_table = Jigsaw_ppx_shared.Utils.hashtbl_of_seq wip_data.feature_decls;
   }
 
 (* Tracking currently processed module *)
@@ -93,6 +96,26 @@ let register_type_extension
           (extension_info :: existing_extensions)
 
 
+let register_feature_function
+    ctx
+    (feature_name : AD.feature_id)
+    (feature_function : AD.feature_function_id)
+    (typ : core_type) =
+  E.info (Printf.sprintf "Registering function %s of feature %s of type %s"
+       feature_function feature_name (E.string_of_core_type typ) );
+  let feature_function_info : AD.feature_function_info = {
+    ff_function_type = typ;
+    ff_defining_file = get_current_file ctx
+  } in
+  match Hashtbl.find_opt ctx.feature_decl_table feature_name  with
+    | None ->
+      Hashtbl.add ctx.feature_decl_table feature_name
+        [(feature_function, feature_function_info)]
+    | Some existing_functions ->
+        Hashtbl.add ctx.feature_decl_table feature_name
+          ((feature_function, feature_function_info) :: existing_functions)
+
+
 
 (* query functions current and previous libraries *)
 
@@ -100,6 +123,9 @@ let has_extensible_type (ctx : t) (extensible_type_name : string) =
   Hashtbl.mem ctx.extensible_types_table extensible_type_name ||
   AD.has_extensible_type ctx.analysis_data extensible_type_name
 
+let has_feature (ctx : t) (feature_name : AD.feature_id) : bool =
+  Hashtbl.mem ctx.feature_decl_table feature_name ||
+  AD.has_feature ctx.analysis_data feature_name
 
 
 let get_extensions_of_type (ctx : t) (extensible_type_name : string) : AD.type_extension_info list =
@@ -129,4 +155,5 @@ let export_data (ctx : t) : (AD.data * string list) =
   {
     extensible_types = U.seq_of_hashtbl ctx.extensible_types_table;
     extensions = U.seq_of_hashtbl ctx.type_extension_table;
+    feature_decls = U.seq_of_hashtbl ctx.feature_decl_table;
   }, ctx.files_in_current_library

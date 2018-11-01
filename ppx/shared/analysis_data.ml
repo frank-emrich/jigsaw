@@ -1,4 +1,5 @@
 (*open Utils*)
+open Ast_versioning.Parsetree
 
 type extensible_type_id = string [@@deriving show, yojson]
 type type_extension_id = Longident.t
@@ -41,36 +42,57 @@ type type_extension_info = {
   te_extension_id : type_extension_id;
   te_defining_file : string;
   te_type_parameters : string list
-}(* extension id, defining file,  type variables *)
+}
   [@@deriving show, yojson]
 
 type type_extension_seq = (extensible_type_id * type_extension_info list) list (* extended name -> [type_extension_info] *)
   [@@deriving show, yojson]
 
 
-
-
 type type_param_assoc_entry = string * string option [@@deriving show]
+
+type feature_id = string [@@deriving show, yojson]
+type feature_function_id = string [@@deriving show, yojson]
+
+let pp_core_type = Errors.print_core_type
+let core_type_to_yojson = Yojson_implementations.core_type_to_yojson
+let core_type_of_yojson = Yojson_implementations.core_type_of_yojson
+
+type feature_function_info = {
+  ff_function_type : core_type;
+  (* This is actually a property of the whole feature, not of individual files: *)
+  ff_defining_file : string
+} [@@deriving yojson, show]
+
+type feature_decl_info = (feature_function_id * feature_function_info) [@@deriving yojson, show]
+
+type feature_decl_seq = (feature_id * feature_decl_info list) list [@@deriving yojson, show]
+
 
 type t = {
   types : extensible_type_info Utils.StringMap.t;
-  extensions : (type_extension_info list) Utils.StringMap.t
-
+  extensions : (type_extension_info list) Utils.StringMap.t;
+  features : (feature_decl_info list) Utils.StringMap.t
 }
 
 type data = {
   extensible_types : extensible_type_seq;
-  extensions : type_extension_seq
+  extensions : type_extension_seq;
+  feature_decls : feature_decl_seq
 } [@@deriving show]
 
 let create (id : data) : t = {
   types = Utils.string_map_of_seq  id.extensible_types;
-  extensions = Utils.string_map_of_seq  id.extensions
+  extensions = Utils.string_map_of_seq  id.extensions;
+  features = Utils.string_map_of_seq id.feature_decls
 }
 
 
 let has_extensible_type (ad : t) (extensible_type_name : extensible_type_id) : bool =
   Utils.StringMap.mem extensible_type_name ad.types
+
+let has_feature (ad : t) (feature_name : feature_id) : bool =
+  Utils.StringMap.mem feature_name ad.features
 
 (*let get_extensible_type type_name = Hashtbl.find_opt type_table type_name*)
 

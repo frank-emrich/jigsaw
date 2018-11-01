@@ -10,12 +10,13 @@ end
 
 module Attributes =
 struct
-  let extension_point = "extension_point"
+  let extensible_type = "extensible_type"
   let extension_of = "extension_of"
   let inject = "inject"
   let library_name = "currently-compiled-library-name"
+  let feature_decl = "feature_declaration"
 
-  let all = [extension_point ; extension_of ; inject; library_name]
+  let all = [extensible_type ; extension_of ; inject; library_name ; feature_decl]
 end
 
 module Cookies =

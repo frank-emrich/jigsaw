@@ -12,16 +12,20 @@ module AD = Jigsaw_ppx_shared.Analysis_data
 module E = Jigsaw_ppx_shared.Errors
 module U = Jigsaw_ppx_shared.Utils
 
+(* TODO: So far, all matching of functions in injection functor is based on their names.
+   Instead, we should have attributes for this and only fall back to using names if there is no attribute *)
 
-
-let validate_type_decl overall_loc type_decl =
+let validate_type_decl ctx overall_loc type_decl =
     let name = unloc type_decl.ptype_name in
     let kind = type_decl.ptype_kind in
     let manifest = type_decl.ptype_manifest in
     match kind, manifest with
       | Ptype_abstract, None ->
         (* TODO: check that the name matches a known extensible type *)
-        AD.InjectionType name
+        if Context.has_extensible_type ctx name then
+          AD.InjectionType name
+        else
+          E.raise_error type_decl.ptype_loc ("Injection functor contains type " ^ name ^ ", which is not a previously declared extensible type")
       | _ -> E.raise_error overall_loc "Only abstract types without manifest supported in injection functor argument"
 
 let check_extensible_type_name extensible_type_core_type expected_extensible_type_name =
@@ -114,7 +118,7 @@ let validate_feature_function _previous function_name =
 
 let handle_injection_functor_argument_signature ctx argument_signature =
   let handle_type _previous loc (type_decl : type_declaration) =
-     validate_type_decl loc type_decl in
+     validate_type_decl ctx loc type_decl in
   let handle_value previous (value_desc : value_description) =
     let name = unloc value_desc.pval_name in
     let loc = value_desc.pval_name.loc in

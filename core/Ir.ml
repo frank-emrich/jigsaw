@@ -48,13 +48,13 @@ struct
   module type TYPECHECK =
   sig
     val typecheck : typ tenv -> term -> typ
-  end [@feature_decl]
+  end [@@feature_declaration]
 
 
   module type EVALUATE =
   sig
-    val eval : 'value venv -> term -> value
-  end
+    val eval : value venv -> term -> value
+  end [@@feature_declaration]
 
 
 

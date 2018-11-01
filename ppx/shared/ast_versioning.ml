@@ -42,4 +42,5 @@ let type_to_ppxlib = To_ppxlib.copy_core_type
 
 let expression_to_ppxlib (e : Parsetree.expression) = To_ppxlib.copy_expression e
 
+let core_type_to_ppxlib (t : Parsetree.core_type) = To_ppxlib.copy_core_type t
 
