@@ -1,6 +1,7 @@
 open Jigsaw_ppx_shared.Ast_versioning.Parsetree
 
 
+open Jigsaw_ppx_shared
 module AD = Jigsaw_ppx_shared.Analysis_data
 module E = Jigsaw_ppx_shared.Errors
 module U = Jigsaw_ppx_shared.Utils
@@ -48,9 +49,16 @@ let push_functor (ctx : t) name =
   ctx.current_module := (AD.ModulePathFunctor name) :: !(ctx.current_module)
 
 let push_injection_functor (ctx : t) name elements =
+  let elements_stringified = List.map Analysis_data.show_injection_arg_element elements in
+  Errors.debug ("Entering Injection Functor named " ^ name ^ ", elements: " ^ String.concat "," elements_stringified);
   ctx.current_module := ((AD.ModulePathInjectionFunctor (name, elements)) :: !(ctx.current_module))
 
 let pop_module (ctx : t) =
+  let modname = match List.hd !(ctx.current_module) with
+    | Analysis_data.ModulePathPlain name
+    | ModulePathFunctor name
+    | ModulePathInjectionFunctor (name, _) -> name   in
+  Errors.debug ("Leaving module/injection functor " ^ modname);
   ctx.current_module := List.tl !(ctx.current_module)
 
 let current_module_path_is_simple ctx =
@@ -64,7 +72,27 @@ let current_simple_module_path_to_list (ctx : t) =
     | _ -> E.raise_error_noloc "Using current_plain_module_path_to_list on non-plain module path"
   ) !(ctx.current_module)
 
+let get_active_injection_functor_data ctx =
+  E.check (not (current_module_path_is_simple ctx));
+  let injection_functor = List.find
+    (function
+      | AD.ModulePathInjectionFunctor _ -> true
+      | _ -> false)
+    !(ctx.current_module) in
+  match injection_functor with
+    | AD.ModulePathInjectionFunctor (name, info) -> (name, info)
+    | _ -> assert false
 
+
+let get_active_injection_functor_types ctx =
+  let _name, data = get_active_injection_functor_data ctx in
+  List.fold_left
+    (fun acc element ->
+      match element with
+        | AD.InjectionType typ -> typ :: acc
+        | _ -> acc)
+    []
+    data
 
 (* registration functions (current libraries). Validation of added data must be done beforehand *)
 
@@ -100,12 +128,14 @@ let register_feature_function
     ctx
     (feature_name : AD.feature_id)
     (feature_function : AD.feature_function_id)
-    (typ : core_type) =
+    (typ : core_type)
+    (typ_split : AD.feature_function_type_part list) =
   E.info (Printf.sprintf "Registering function %s of feature %s of type %s"
        feature_function feature_name (E.string_of_core_type typ) );
   let feature_function_info : AD.feature_function_info = {
     ff_function_type = typ;
-    ff_defining_file = get_current_file ctx
+    ff_defining_file = get_current_file ctx;
+    ff_function_type_split = typ_split
   } in
   match Hashtbl.find_opt ctx.feature_decl_table feature_name  with
     | None ->

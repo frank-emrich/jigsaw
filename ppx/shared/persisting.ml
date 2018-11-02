@@ -32,7 +32,7 @@ let is_extension_json_file file_name =
   Str.string_match regexp file_name 0
 
 let load_from_include_folder is_pwd current_library folder_path : (persisted_data * string) list =
-  Errors.debug ("processing folder " ^ folder_path);
+  (*Errors.debug ("processing folder " ^ folder_path);*)
   if ( Sys.file_exists folder_path && Sys.is_directory folder_path) then
     let folder_contents = Sys.readdir folder_path in
     Array.fold_left (fun acc name ->
@@ -101,7 +101,7 @@ let remove_nested_info (filter_inner_seq : 'b -> bool)  (seq : ('a * 'b list) li
   List.filter ( fun (_, extensions) -> not (extensions = [])) seq'*)
 
 let load_work_in_progress_analysis_data_if_existing base_folder top_library_name current_file_name : (Analysis_data.data * string list) =
-  Errors.debug ("base_folder: " ^ base_folder);
+  (*Errors.debug ("base_folder: " ^ base_folder);*)
   let file_to_read = get_file_name_for_library top_library_name in
   let load_path = Filename.concat base_folder file_to_read in
   let empty : Analysis_data.data = {

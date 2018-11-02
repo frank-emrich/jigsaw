@@ -20,21 +20,6 @@ let extract_type_var core_type =
 let unloc (loc : 'a Asttypes.loc) = loc.txt
 
 
-(*
-let handle_constructor ext_points constr =
-  let attrs = constr.pcd_attributes in
-  let is_extension_attr attr = unloc (fst attr) = Jigsaw_ppx_shared.Names.Attributes.extension_point in
-  match List.find_opt is_extension_attr attrs with
-  | Some _attr ->
-      let constr_name = unloc constr.pcd_name in
-      let constr_res_type_opt = constr.pcd_res in
-      (* used in GADTs *)
-      let constr_args = constr.pcd_args in
-      let constr_loc = constr.pcd_loc in
-      (constr_name, constr_loc, constr_args, constr_res_type_opt) :: ext_points
-  | None -> ext_points
-
-*)
 
 let handle_attribute _ (attr_loc, attr_payload) =
   let name = unloc attr_loc in
@@ -46,17 +31,7 @@ let handle_attribute _ (attr_loc, attr_payload) =
   else None
 
 
-let check_attr_payload_empty (attr : attribute) =
-  if AM.attribute_has_empty_payload attr then
-    ()
-  else
-    let attr_name = unloc (fst attr) in
-    E.raise_error (fst attr).loc ("Attribute " ^ attr_name ^ " should not have a payload")
 
-let check_no_type_parameters (td_record : type_declaration) =
-  match td_record.ptype_params with
-    | [] -> ()
-    | _ -> E.raise_error td_record.ptype_loc "Type parameters not supported here"
 
 (* Does the declared type have a constructor to be used as an extension point *)
 (* Not used at the time, we do not require extensible types to be explicitly declared *)
@@ -68,8 +43,8 @@ let handle_extensible_type ctx (td_record : type_declaration) =
     begin match extensible_type_attrs with
       | [] -> None
       | [attr] ->
-        check_attr_payload_empty attr;
-        check_no_type_parameters td_record;
+        Checks.check_attr_payload_empty attr;
+        Checks.check_no_type_parameters td_record;
         let declared_type_name = unloc td_record.ptype_name in
         if Context.has_extensible_type ctx declared_type_name then
           E.raise_error (fst attr).loc ("There already exists an extensible type named " ^ declared_type_name )
@@ -82,12 +57,7 @@ let handle_extensible_type ctx (td_record : type_declaration) =
   | _ -> None
 
 
-let check_not_inside_of_injection_functor  ctx loc =
-  if Context.current_module_path_is_simple ctx then
-    ()
-  else
-    E.raise_error loc "This type declaration is inside of an injection functor, which is not allowed.
-                        Refer to extensible types by using polymorphic variables with the same name as the desired extensible type"
+
 
 (* Does the type declaration have an attribute saying that the whole type represents an extension of another type? *)
 let handle_type_extension ctx type_decl =
@@ -95,7 +65,7 @@ let handle_type_extension ctx type_decl =
   match extension_of with
   | None -> None
   | Some extended_type ->
-      check_not_inside_of_injection_functor ctx type_decl.ptype_loc;
+      Checks.check_type_extension_not_inside_of_injection_functor ctx type_decl.ptype_loc;
       let extension_name = unloc type_decl.ptype_name in
       let type_parameters = List.map fst type_decl.ptype_params in
       let match_type_parameters core_t =
@@ -181,6 +151,14 @@ let attribute (_ctx : Context.t) m attr =
   else () ;
   Ast_mapper.default_mapper.attribute m attr
 
+let extension (_ctx : Context.t) m extension =
+  let name = unloc (fst extension) in
+  if List.mem name Jigsaw_ppx_shared.Names.Extensions.all then
+    E.raise_error (fst extension).loc ("Found extensibility-related extension \"" ^ name ^ "\" in an unsupported location")
+  else () ;
+  Ast_mapper.default_mapper.extension m extension
+
+
 let module_binding (ctx : Context.t) mapper mod_binding =
   let mod_name = unloc mod_binding.pmb_name in
   let mod_expr = mod_binding.pmb_expr in
@@ -263,11 +241,12 @@ let save_context _config _cookies ctx =
 let actual_mapper ctx : Ast_mapper.mapper =
   {
     Ast_mapper.default_mapper with
-    type_declaration = type_declaration ctx;
-    attribute = attribute ctx;
-    module_binding = module_binding ctx;
-    structure = structure ctx;
-    structure_item = structure_item ctx;
+      type_declaration = type_declaration ctx;
+      attribute = attribute ctx;
+      extension = extension ctx;
+      module_binding = module_binding ctx;
+      structure = structure ctx;
+      structure_item = structure_item ctx;
   }
 
 let toplevel_structure config cookies _ strct =

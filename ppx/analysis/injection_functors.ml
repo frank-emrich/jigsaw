@@ -11,12 +11,14 @@ let debug_message _loc_opt = Jigsaw_ppx_shared.Errors.debug*)
 module AD = Jigsaw_ppx_shared.Analysis_data
 module E = Jigsaw_ppx_shared.Errors
 module U = Jigsaw_ppx_shared.Utils
+open Jigsaw_ppx_shared
 
 (* TODO: So far, all matching of functions in injection functor is based on their names.
    Instead, we should have attributes for this and only fall back to using names if there is no attribute *)
 
 let validate_type_decl ctx overall_loc type_decl =
     let name = unloc type_decl.ptype_name in
+    Errors.debug ("Seen type " ^ name);
     let kind = type_decl.ptype_kind in
     let manifest = type_decl.ptype_manifest in
     match kind, manifest with
@@ -150,10 +152,11 @@ let handle_injection_functor_argument_signature ctx argument_signature =
         let loc = argument_signature_item.psig_loc in
         List.fold_left (fun prev_inner type_decl ->  (handle_type prev_inner loc  type_decl) :: prev_inner ) previous type_decls
       | Psig_value (value_desc : value_description) ->
-        [handle_value previous value_desc]
+        (handle_value previous value_desc) :: previous
       | _ -> E.raise_error argument_signature_item.psig_loc "Unsupported item in injection functor" in
   List.rev (List.fold_left handle_item [] argument_signature)
 
+(* At this point we already know that we have an injection functor *)
 let handle_injection_functor ctx module_type =
   let desc = module_type.pmty_desc in
   let loc = module_type.pmty_loc in
