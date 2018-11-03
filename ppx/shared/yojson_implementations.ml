@@ -34,3 +34,12 @@ let core_type_of_yojson json =
       else
         (* We could translate between the versions here instead of failing *)
         Errors.raise_error_noloc "Trying to unmarshall data that was marshalled using a different version fo the OCaml AST."
+
+
+let longident_id_to_yojson (lid : Longident.t) : Yojson.Safe.json =
+   `Variant ("Longident", Some (`String (String.concat "." (Longident.flatten lid)) ))
+
+let longident_of_yojson : Yojson.Safe.json -> (Longident.t, string) Result.result = function
+  | `Variant ("Longident", Some (`String lid_string )) ->
+    Result.Ok (Longident.parse lid_string)
+  | _ -> Result.Error "Error unmarshalling Longident"

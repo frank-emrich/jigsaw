@@ -208,7 +208,7 @@ let structure_item (ctx : Context.t) rec_mapper strct_item =
   match desc with
     | Pstr_modtype mt_decl ->
       print_endline "found modtype";
-      begin match Features.handle_feature_decl ctx mt_decl with
+      begin match Feature_declarations.handle_feature_decl ctx mt_decl with
         | Some mt_decl' ->
           {strct_item with pstr_desc = Pstr_modtype mt_decl'}
         | None -> default ()

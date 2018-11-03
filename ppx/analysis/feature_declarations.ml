@@ -43,15 +43,18 @@ let handle_feature_function_type (ctx : Context.t) (t : core_type) : Analysis_da
   let active_types = Context.get_active_injection_functor_types ctx in
   Errors.debug ("Active types: " ^ String.concat "," active_types);
   let type_listified = listify_type t in
+  let type_part_num = List.length type_listified in
   let type_constructor_matches_extensible_type lid =
     match Longident.flatten lid with
       | [name] when List.mem name active_types -> true
       | _ -> false in
-  let handle_type_part (tp : core_type) =
+  let handle_type_part index (tp : core_type) =
+    let is_return_type = (index = type_part_num - 1) in
     let desc = tp.ptyp_desc in
     (*let loc = tp.ptyp_loc in*)
-    match desc with
-      | Ptyp_constr (lid, _args) when type_constructor_matches_extensible_type lid.txt ->
+    match is_return_type, desc with
+      | true, _ -> Analysis_data.TypePartNormalType tp
+      | _, Ptyp_constr (lid, _args) when type_constructor_matches_extensible_type lid.txt ->
         Analysis_data.TypePartExtensibleType (Longident.last lid.txt)
       | _ ->
         (*let type_constructors = collect_type_constructors tp in
@@ -64,7 +67,7 @@ let handle_feature_function_type (ctx : Context.t) (t : core_type) : Analysis_da
         else*)
         Analysis_data.TypePartNormalType tp in
 
-  List.map handle_type_part type_listified
+  List.mapi handle_type_part type_listified
 
 
 
@@ -126,8 +129,6 @@ let handle_feature_decl ctx (module_type_decl : module_type_declaration) =
     | [_], None ->
       Errors.raise_error loc ("Module type declaration was annotated to be for a feature declaration, but no body was provided for the type")
     | _ -> Errors.raise_error loc ("Found multiple attributes of name " ^ feature_decl_attr_name)
-
-
 
 
 

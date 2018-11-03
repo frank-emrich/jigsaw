@@ -15,6 +15,7 @@ type t = {
   extensible_types_table : (AD.extensible_type_id, AD.extensible_type_info) Hashtbl.t;
   type_extension_table : (AD.extensible_type_id, AD.type_extension_info list)  Hashtbl.t;
   feature_decl_table : (AD.feature_id, AD.feature_decl_info list)  Hashtbl.t;
+  feature_impl_table : (AD.feature_id, (AD.feature_function_id * AD.feature_function_impl_info ) list)  Hashtbl.t;
 }
 
 
@@ -27,13 +28,14 @@ let create
   (wip_files : string list) : t =
   {
     analysis_data;
-    current_module =  ref [(AD.ModulePathPlain library_name)];
+    current_module =  ref [(AD.ModulePathLibrary library_name)];
     current_file;
     current_library = library_name;
     files_in_current_library = wip_files;
     extensible_types_table = Jigsaw_ppx_shared.Utils.hashtbl_of_seq wip_data.extensible_types;
     type_extension_table = Jigsaw_ppx_shared.Utils.hashtbl_of_seq wip_data.extensions;
     feature_decl_table = Jigsaw_ppx_shared.Utils.hashtbl_of_seq wip_data.feature_decls;
+    feature_impl_table = Jigsaw_ppx_shared.Utils.hashtbl_of_seq wip_data.feature_impls;
   }
 
 (* Tracking currently processed module *)
@@ -41,6 +43,9 @@ let create
 let get_current_file (ctx : t) = ctx.current_file
 
 let get_current_library (ctx : t) = ctx.current_library
+
+let get_current_module_path (ctx : t) =
+  List.rev !(ctx.current_module)
 
 let push_plain_module (ctx : t) name =
   ctx.current_module := (AD.ModulePathPlain name) :: !(ctx.current_module)
@@ -57,18 +62,21 @@ let pop_module (ctx : t) =
   let modname = match List.hd !(ctx.current_module) with
     | Analysis_data.ModulePathPlain name
     | ModulePathFunctor name
+    | ModulePathLibrary name
     | ModulePathInjectionFunctor (name, _) -> name   in
   Errors.debug ("Leaving module/injection functor " ^ modname);
   ctx.current_module := List.tl !(ctx.current_module)
 
 let current_module_path_is_simple ctx =
   List.for_all (function
-    | AD.ModulePathPlain _ -> true
+    | AD.ModulePathPlain _
+    | ModulePathLibrary _-> true
     | _ -> false) !(ctx.current_module)
 
 let current_simple_module_path_to_list (ctx : t) =
   List.rev_map (function
-    | AD.ModulePathPlain module_name -> module_name
+    | AD.ModulePathPlain name
+    | ModulePathLibrary name -> name
     | _ -> E.raise_error_noloc "Using current_plain_module_path_to_list on non-plain module path"
   ) !(ctx.current_module)
 
@@ -93,6 +101,21 @@ let get_active_injection_functor_types ctx =
         | _ -> acc)
     []
     data
+
+(* Remove the prefix from a Longident that corresponds to the module we are currently in *)
+let contextualize_lid ctx lid =
+  let rec contextualize current_module_parts lid_parts =
+    match current_module_parts, lid_parts with
+      | _, []
+      | [], _ -> lid_parts
+      | (name :: cmps), (id :: ids) ->
+        if name = id then
+          contextualize cmps ids
+        else
+          lid_parts in
+  match Longident.unflatten (contextualize (current_simple_module_path_to_list ctx) (Longident.flatten lid)) with
+    | Some res_lid -> res_lid
+    | None -> failwith "Internal Errors: contextualize_lid failed to produce valid Longident.t"
 
 (* registration functions (current libraries). Validation of added data must be done beforehand *)
 
@@ -146,6 +169,23 @@ let register_feature_function
           ((feature_function, feature_function_info) :: existing_functions)
 
 
+let register_feature_function_implementation
+    ctx
+    (feature_name : AD.feature_id)
+    (feature_function : AD.feature_function_id)
+    (injections: AD.feature_function_id list )
+    (type_correspondences : AD.feature_function_impl_type_part list ) =
+  let info : Analysis_data.feature_function_impl_info = {
+    ffi_location = get_current_module_path ctx;
+    ffi_defining_file = get_current_file ctx;
+    ffi_injections = injections;
+    ffi_type = type_correspondences;
+  } in
+  let entry = (feature_function, info) in
+  let entries = match Hashtbl.find_opt ctx.feature_impl_table feature_name with
+    | Some impls -> entry :: impls
+    | None -> [entry] in
+  Hashtbl.add ctx.feature_impl_table feature_name entries
 
 (* query functions current and previous libraries *)
 
@@ -156,6 +196,45 @@ let has_extensible_type (ctx : t) (extensible_type_name : string) =
 let has_feature (ctx : t) (feature_name : AD.feature_id) : bool =
   Hashtbl.mem ctx.feature_decl_table feature_name ||
   AD.has_feature ctx.analysis_data feature_name
+
+
+
+
+let get_feature_functions_of_feature (ctx : t) (feature_name : Analysis_data.feature_id) =
+  if Analysis_data.has_feature ctx.analysis_data feature_name then
+    Analysis_data.get_feature_functions_of_feature ctx.analysis_data feature_name
+  else
+    (Errors.check (has_feature ctx feature_name);
+    Hashtbl.find ctx.feature_decl_table feature_name)
+
+
+
+let get_feature_function_of_feature (ctx : t) (feature_name : Analysis_data.feature_id) (feature_function_name : Analysis_data.feature_function_id) =
+  let fns = get_feature_functions_of_feature ctx feature_name in
+  List.assoc_opt feature_function_name fns
+
+let has_feature_function (ctx : t) (feature_name : Analysis_data.feature_id) (feature_function_name : Analysis_data.feature_function_id) =
+  if Analysis_data.has_feature ctx.analysis_data feature_name then
+    Analysis_data.has_feature_function ctx.analysis_data feature_name feature_function_name
+  else
+    match get_feature_function_of_feature ctx feature_name feature_function_name with
+      | Some _ -> true
+      | None -> false
+
+let get_feature_function_implementations
+    (ctx : t)
+    (feature_name : Analysis_data.feature_id)
+    (feature_function_name : Analysis_data.feature_function_id) =
+  let ad_impls =
+    if AD.has_feature ctx.analysis_data feature_name then
+      AD.get_feature_function_implementations ctx.analysis_data feature_name feature_function_name
+    else
+      [] in
+  match Hashtbl.find_opt ctx.feature_impl_table feature_name with
+    | Some impls ->
+      let impls_for_function = List.filter (fun (ffname, _) -> ffname = feature_function_name ) impls in
+      impls_for_function @ ad_impls
+    | None -> ad_impls
 
 
 let get_extensions_of_type (ctx : t) (extensible_type_name : string) : AD.type_extension_info list =
@@ -186,4 +265,5 @@ let export_data (ctx : t) : (AD.data * string list) =
     extensible_types = U.seq_of_hashtbl ctx.extensible_types_table;
     extensions = U.seq_of_hashtbl ctx.type_extension_table;
     feature_decls = U.seq_of_hashtbl ctx.feature_decl_table;
+    feature_impls = U.seq_of_hashtbl ctx.feature_impl_table;
   }, ctx.files_in_current_library

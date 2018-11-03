@@ -1,6 +1,6 @@
 
 open Jigsaw_ppx_shared
-(*open Ast_versioning.Ast*)
+open Ast_versioning.Ast
 open Ast_versioning.Parsetree
 
 let check_no_extensibility_related_attributes ?(except=None) (attrs : attributes) =
@@ -38,3 +38,21 @@ let check_no_type_parameters (td_record : type_declaration) =
     | _ -> Errors.raise_error td_record.ptype_loc "Type parameters not supported here"
 
 
+
+let check_feature_exists ctx loc (feature_name : Analysis_data.feature_id) =
+  if Context.has_feature ctx feature_name then
+    ()
+  else
+    Errors.raise_error loc ("Unknown feature : " ^ feature_name ^ ". Maybe you forgot adding the library defining it as a dependency?")
+
+
+let check_feature_function_exists ctx loc (feature_name : Analysis_data.feature_id) (feature_function_name : Analysis_data.feature_function_id) =
+  match Context.get_feature_function_of_feature ctx feature_name feature_function_name with
+    | None -> Errors.raise_error loc ("Feature function unknown: " ^ feature_function_name)
+    | Some _ -> ()
+
+
+let check_no_label_in_feature_function_impl loc (label : Asttypes.arg_label) =
+  match label with
+    | Nolabel -> ()
+    | _ -> Errors.raise_error loc "No labelled or optional parameters supported for feature functions"

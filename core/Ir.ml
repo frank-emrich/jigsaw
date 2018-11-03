@@ -57,6 +57,8 @@ struct
   end [@@feature_declaration]
 
 
+  let test : int = x
+    [@@feature_implementation  TYPECHECK.typecheck ]
 
 
   let core_typecheck
@@ -88,7 +90,7 @@ struct
       | Some (Arrow (t11, t12)), t2 when t11 = t2 -> t12
       | _ -> raise (TypeError "Wrong funcall type") )
     | VarE x -> ( try ListLabels.assoc x env with Not_found -> raise (TypeError ("Variable " ^ x ^ "Not found")) )
-   [@feature_impl  (core_term : TYPECHECK.typecheck) ]
+   [@@feature_implementation  TYPECHECK.typecheck ]
 
 
 
@@ -113,5 +115,5 @@ struct
           eval env' b
       | _ -> failwith "eval fail" )
     | VarE v -> List.assoc v env
-    [@feature_impl (core_term : EVALUATE.eval) ]
+    [@@feature_implementation EVALUATE.eval]
 end

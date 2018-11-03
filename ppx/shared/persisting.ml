@@ -6,7 +6,8 @@ type persisted_data = {
    per_files : string list;
    per_extensible_types_map : Analysis_data.extensible_type_seq;
    per_type_extensions_map : Analysis_data.type_extension_seq;
-   per_feature_decls : Analysis_data.feature_decl_seq
+   per_feature_decls : Analysis_data.feature_decl_seq;
+   per_feature_impls : Analysis_data.feature_function_impl_seq
 } [@@deriving show,yojson]
 
 
@@ -48,18 +49,21 @@ let load_from_include_folder is_pwd current_library folder_path : (persisted_dat
   else
     []
 
+let empty_analysis_data =
+  {
+    Analysis_data.extensible_types = [];
+    Analysis_data.extensions = [];
+    Analysis_data.feature_decls = [];
+    Analysis_data.feature_impls = [];
+  }
+
 (* public *)
 
 let load_analysis_data current_top_library folders : Analysis_data.data =
   let result_nopwd = List.concat (List.map (load_from_include_folder false current_top_library) folders ) in
   let pwd_path = Sys.getcwd () in
   let result = load_from_include_folder true current_top_library pwd_path @ result_nopwd in
-  let empty =
-    {
-      Analysis_data.extensible_types = [];
-      Analysis_data.extensions = [];
-      Analysis_data.feature_decls = []
-     } in
+
   List.fold_left (fun acc_data (cur_persisted_data, cur_persited_data_file) ->
     if cur_persisted_data.per_library = current_top_library then
       Errors.raise_error_noloc (Printf.sprintf "The extensbility information currently being loaded from file %s is for library %s,
@@ -72,8 +76,10 @@ let load_analysis_data current_top_library folders : Analysis_data.data =
           acc_data.Analysis_data.extensions @ cur_persisted_data.per_type_extensions_map;
         Analysis_data.feature_decls =
           acc_data.Analysis_data.feature_decls  @ cur_persisted_data.per_feature_decls;
+        Analysis_data.feature_impls =
+          acc_data.Analysis_data.feature_impls  @ cur_persisted_data.per_feature_impls;
       }
-  ) empty result
+  ) empty_analysis_data result
 
 let extensible_type_not_from file ( (_, ext_type_info) : string * Analysis_data.extensible_type_info) =
   not (ext_type_info = file)
@@ -83,6 +89,11 @@ let type_extension_not_from file  (extension : Analysis_data.type_extension_info
 
 let feature_function_not_from file (_, (extension : Analysis_data.feature_function_info)) : bool =
   not (extension.Analysis_data.ff_defining_file = file)
+
+
+let feature_function_impl_not_from file (_, (extension : Analysis_data.feature_function_impl_info)) : bool =
+  not (extension.Analysis_data.ffi_defining_file = file)
+
 
 let remove_nested_info (filter_inner_seq : 'b -> bool)  (seq : ('a * 'b list) list as 'seq) : 'seq =
   List.fold_right
@@ -104,11 +115,6 @@ let load_work_in_progress_analysis_data_if_existing base_folder top_library_name
   (*Errors.debug ("base_folder: " ^ base_folder);*)
   let file_to_read = get_file_name_for_library top_library_name in
   let load_path = Filename.concat base_folder file_to_read in
-  let empty : Analysis_data.data = {
-          extensible_types = [];
-          extensions = [];
-          feature_decls = [];
-        } in
   let wip_data =
     if Sys.file_exists load_path then
       begin
@@ -128,21 +134,25 @@ let load_work_in_progress_analysis_data_if_existing base_folder top_library_name
         | (true, true) ->
           (* We filter out data collected in a previous run over the file we are currently pre-processing *)
           (({
-            extensible_types = List.filter (extensible_type_not_from current_file_name) pdata.per_extensible_types_map;
+            extensible_types =
+              List.filter (extensible_type_not_from current_file_name) pdata.per_extensible_types_map;
             extensions =
               remove_nested_info (type_extension_not_from current_file_name) pdata.per_type_extensions_map ;
             feature_decls =
               remove_nested_info (feature_function_not_from current_file_name) pdata.per_feature_decls;
+            feature_impls =
+              remove_nested_info (feature_function_impl_not_from current_file_name) pdata.per_feature_impls;
           }, previous_files) : Analysis_data.data * string list )
         | (false, _) ->
           (({
             extensible_types = pdata.per_extensible_types_map;
             extensions = pdata.per_type_extensions_map;
-            feature_decls = pdata.per_feature_decls
+            feature_decls = pdata.per_feature_decls;
+            feature_impls = pdata.per_feature_impls;
           }, updated_files) : Analysis_data.data * string list )
         end
       else
-        ((empty, [current_file_name]) : Analysis_data.data * string list ) in
+        ((empty_analysis_data, [current_file_name]) : Analysis_data.data * string list ) in
   Errors.debug ("Loaded wip data: " ^ Analysis_data.show_data (fst wip_data));
   wip_data
 
@@ -159,7 +169,8 @@ let persist_data
       per_files = context_files;
       per_extensible_types_map = context_analysis_data.extensible_types;
       per_type_extensions_map = context_analysis_data.extensions;
-      per_feature_decls = context_analysis_data.feature_decls
+      per_feature_decls = context_analysis_data.feature_decls;
+      per_feature_impls = context_analysis_data.feature_impls;
     } in
   let json = persisted_data_to_yojson pdata in
   Errors.debug ("Persisting analysis data to " ^ path_to_write);
