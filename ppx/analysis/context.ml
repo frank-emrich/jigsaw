@@ -80,6 +80,18 @@ let current_simple_module_path_to_list (ctx : t) =
     | _ -> E.raise_error_noloc "Using current_plain_module_path_to_list on non-plain module path"
   ) !(ctx.current_module)
 
+(* like current_simple_module_path_to_list, but only works until it sees a functor *)
+let current_simple_module_path_prefix_list (ctx : t) =
+  List.fold_right
+    (fun m prefix ->
+      match m with
+        | AD.ModulePathPlain name
+        | ModulePathLibrary name -> name :: prefix
+        | _ -> prefix)
+    !(ctx.current_module)
+    []
+
+
 let get_active_injection_functor_data ctx =
   E.check (not (current_module_path_is_simple ctx));
   let injection_functor = List.find
@@ -113,7 +125,7 @@ let contextualize_lid ctx lid =
           contextualize cmps ids
         else
           lid_parts in
-  match Longident.unflatten (contextualize (current_simple_module_path_to_list ctx) (Longident.flatten lid)) with
+  match Longident.unflatten (contextualize (current_simple_module_path_prefix_list ctx) (Longident.flatten lid)) with
     | Some res_lid -> res_lid
     | None -> failwith "Internal Errors: contextualize_lid failed to produce valid Longident.t"
 
@@ -181,6 +193,9 @@ let register_feature_function_implementation
     ffi_injections = injections;
     ffi_type = type_correspondences;
   } in
+  E.info
+    (Printf.sprintf "Registered implementation of function %s of feature %s"
+     feature_function feature_name );
   let entry = (feature_function, info) in
   let entries = match Hashtbl.find_opt ctx.feature_impl_table feature_name with
     | Some impls -> entry :: impls

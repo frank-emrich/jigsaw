@@ -43,7 +43,7 @@ let rec extract_function_parameters_from_expression expr : pattern list =
     | _ -> []
 
 
-let extract_feature_attribute_data ctx (feature_attr : attribute) =
+let extract_feature_attribute_data _ctx (feature_attr : attribute) =
   let payload = snd feature_attr in
   let loc = (fst feature_attr).loc in
   let feature_lid = Ast_manipulation.extract_single_ident_payload loc payload in
@@ -92,11 +92,11 @@ let match_feature_function_parameter_types_against_declaration
             (index+1) feature_function_name feature_name expected_type_string impl_type_string)
     | TypePartExtensibleType extensible_type_name ->
       match impl_type.ptyp_desc with
-        | Ptyp_constr (lid, args) ->
+        | Ptyp_constr (lid, _args) ->
           (* TODO: check that  the arguments match what we expected  *)
           (* TODO: Handle the case that we do not want to handle only a specific extension, but the whole type *)
           let contextualized_extensions = get_extension_ids_contextualized extensible_type_name in
-          begin match List.find_opt (fun (contextualized_lid, plain_lid) -> contextualized_lid = lid.txt) contextualized_extensions with
+          begin match List.find_opt (fun (contextualized_lid, _plain_id) -> contextualized_lid = lid.txt) contextualized_extensions with
             | Some (_, extension_plain_lid) ->
               ImplTypePartExtension (extensible_type_name, extension_plain_lid)
             | None ->
@@ -198,7 +198,7 @@ let check_unique_instance
     List.iter (fun (_, impl) -> check_not_all_instances_equal impl) implementations
 
 
-let handle_feature_function_implementation ctx (binding : value_binding) (feature_attr : attribute)   =
+let process_feature_function_implementation ctx (binding : value_binding) (feature_attr : attribute)   =
   let pat = binding.pvb_pat in
   let expr = binding.pvb_expr in
   let loc = binding.pvb_loc in
@@ -272,5 +272,18 @@ let handle_feature_function_implementation ctx (binding : value_binding) (featur
 
 
 
+(* Test whether function binding is a feature function implementation *)
 
-(* TODO check that there is no competing implementation for the same selection of types  *)
+let handle_feature_function_implementation ctx (b : value_binding) : value_binding option =
+  let attrs = b.pvb_attributes in
+  let impl_attr_name = Names.Attributes.feature_implementation in
+  let is_impl_attr = Ast_manipulation.attribute_has_name impl_attr_name in
+  let (impl_attrs, non_impl_attrs) = List.partition is_impl_attr attrs in
+  match impl_attrs with
+    | [] -> None
+    | [attr] ->
+      Checks.check_no_extensibility_related_attributes non_impl_attrs;
+      process_feature_function_implementation ctx b attr;
+      Some b
+    | _ ->
+      Errors.raise_error b.pvb_loc ("More than one attribute of name " ^ impl_attr_name)

@@ -57,9 +57,6 @@ struct
   end [@@feature_declaration]
 
 
-  let test : int = x
-    [@@feature_implementation  TYPECHECK.typecheck ]
-
 
   let core_typecheck
       (typecheck : typ tenv -> term -> typ)
@@ -116,4 +113,9 @@ struct
       | _ -> failwith "eval fail" )
     | VarE v -> List.assoc v env
     [@@feature_implementation EVALUATE.eval]
+
+
+
+
 end
+

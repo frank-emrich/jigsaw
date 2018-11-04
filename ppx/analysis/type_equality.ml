@@ -2,12 +2,11 @@
    which is irrelevant for type equality tests. *)
 
 open Jigsaw_ppx_shared
-open Ast_versioning.Parsetree
 open Ast_versioning.Ast
 
 
 (* This mapper replaces all locations with a fixed dummy location *)
-let location m _ = Location.none
+let location _ _ = Location.none
 let loc_elimination_mapper = {Ast_mapper.default_mapper with location = location }
 
 

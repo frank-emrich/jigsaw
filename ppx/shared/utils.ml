@@ -27,11 +27,12 @@ let rec split_list_after i l =
 let mapi2
     (f : int -> 'a -> 'b -> 'c)
     (l1 : 'a list)
-    (l2: 'b list) =
+    (l2 : 'b list) =
   let rec mapi2indexed f l1 l2 i =
     match l1, l2 with
       | x :: l1', y :: l2' ->
         (f i x y) :: mapi2indexed f l1' l2' (i+1)
+      | [], [] -> []
       | _ -> failwith "List length mismatch in mapi2" in
   mapi2indexed f l1 l2 0
 
@@ -42,4 +43,4 @@ let rec take i = function
 let rec last = function
   | [] -> failwith "last on empty list"
   | [x] -> x
-  | x :: xs -> last xs
+  | _ :: xs -> last xs

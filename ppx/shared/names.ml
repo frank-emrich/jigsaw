@@ -15,8 +15,9 @@ struct
   let inject = "inject"
   let library_name = "currently-compiled-library-name"
   let feature_decl = "feature_declaration"
+  let feature_implementation = "feature_implementation"
 
-  let all = [extensible_type ; extension_of ; inject; library_name ; feature_decl]
+  let all = [extensible_type ; extension_of ; inject; library_name ; feature_decl ; feature_implementation]
 end
 
 module Cookies =
