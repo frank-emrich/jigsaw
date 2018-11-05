@@ -127,6 +127,10 @@ let has_feature (ad : t) (feature_name : feature_id) : bool =
 
 (*let get_extensible_type type_name = Hashtbl.find_opt type_table type_name*)
 
+let get_extensible_types (ad : t) : feature_id list =
+  Utils.keys_of_stringmap ad.types
+
+
 let get_extensions_of_type (ad : t) (extensible_type_name : extensible_type_id) : type_extension_info list =
   Errors.check (has_extensible_type ad extensible_type_name);
   match Utils.StringMap.find_opt extensible_type_name ad.extensions with

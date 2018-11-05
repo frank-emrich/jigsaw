@@ -26,9 +26,10 @@ let create
   (analysis_data : AD.t)
   (wip_data : AD.data)
   (wip_files : string list) : t =
+  let current_file_module = Names.filename_to_module_name current_file in
   {
     analysis_data;
-    current_module =  ref [(AD.ModulePathLibrary library_name)];
+    current_module =  ref [ (AD.ModulePathPlain current_file_module) ; (AD.ModulePathLibrary library_name)];
     current_file;
     current_library = library_name;
     files_in_current_library = wip_files;
@@ -82,18 +83,21 @@ let current_simple_module_path_to_list (ctx : t) =
 
 (* like current_simple_module_path_to_list, but only works until it sees a functor *)
 let current_simple_module_path_prefix_list (ctx : t) =
-  List.fold_right
-    (fun m prefix ->
+  List.fold_left
+    (fun prefix m ->
       match m with
         | AD.ModulePathPlain name
         | ModulePathLibrary name -> name :: prefix
         | _ -> prefix)
-    !(ctx.current_module)
     []
+    !(ctx.current_module)
 
+
+let inside_of_injection_functor ctx =
+  not (current_module_path_is_simple ctx)
 
 let get_active_injection_functor_data ctx =
-  E.check (not (current_module_path_is_simple ctx));
+  E.check (inside_of_injection_functor ctx);
   let injection_functor = List.find
     (function
       | AD.ModulePathInjectionFunctor _ -> true
@@ -212,6 +216,16 @@ let has_feature (ctx : t) (feature_name : AD.feature_id) : bool =
   Hashtbl.mem ctx.feature_decl_table feature_name ||
   AD.has_feature ctx.analysis_data feature_name
 
+let get_extensible_types (ctx : t) : Analysis_data.feature_id list =
+  let ad_types = Analysis_data.get_extensible_types ctx.analysis_data in
+  Hashtbl.fold
+    (fun t _ types ->
+      if Analysis_data.has_extensible_type ctx.analysis_data t then
+        types
+      else
+        t :: types)
+      ctx.extensible_types_table
+      ad_types
 
 
 

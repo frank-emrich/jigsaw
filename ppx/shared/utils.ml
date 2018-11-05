@@ -1,5 +1,5 @@
 module StringMap = Map.Make(String)
-
+module StringSet = Set.Make(String)
 
 let string_map_of_seq (seq : (string * 'a ) list) : 'a StringMap.t =
   List.fold_left (fun map (k, v) ->
@@ -44,3 +44,11 @@ let rec last = function
   | [] -> failwith "last on empty list"
   | [x] -> x
   | _ :: xs -> last xs
+
+
+let keys_of_stringmap map =
+  StringMap.fold
+    (fun k _ keys ->
+      k :: keys)
+    map
+    []

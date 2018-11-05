@@ -44,3 +44,9 @@ let expression_to_ppxlib (e : Parsetree.expression) = To_ppxlib.copy_expression 
 
 let core_type_to_ppxlib (t : Parsetree.core_type) = To_ppxlib.copy_core_type t
 
+let module_expr_to_ppxlib (me : Parsetree.module_expr) =
+  let expr =Ast.Ast_helper.Exp.pack me in
+  let ppxlib_expr = expression_to_ppxlib expr in
+  match ppxlib_expr.pexp_desc with
+    | Pexp_pack me_ppxlib -> me_ppxlib
+    | _ -> failwith "Version conversion of pack expression yielded something unexpected"

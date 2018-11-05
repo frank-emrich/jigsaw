@@ -85,6 +85,10 @@ let check_feature_decls_not_empty parent_loc (s : signature) =
   else
     ()
 
+let check_is_in_injection_functor ctx loc =
+  if not (Context.inside_of_injection_functor ctx) then
+    Errors.raise_error loc "A feature declaration must be inside of an injection functor"
+
 let handle_feature_decl_signature_item ctx feature_name (item : signature_item) =
   let loc = item.psig_loc in
   let desc = item.psig_desc in
@@ -124,6 +128,7 @@ let handle_feature_decl ctx (module_type_decl : module_type_declaration) =
       Checks.check_attr_payload_empty attr;
       let feature_name = unloc (module_type_decl.pmtd_name) in
       check_feature_not_declared_already ctx loc feature_name;
+      check_is_in_injection_functor ctx loc;
       handle_feature_decl_module_type ctx feature_name mt;
       Some module_type_decl
     | [_], None ->

@@ -2,6 +2,7 @@
 open Jigsaw_ppx_shared.Ast_versioning.Ast
 open Jigsaw_ppx_shared.Ast_versioning.Parsetree
 
+open Jigsaw_ppx_shared
 module AD = Jigsaw_ppx_shared.Analysis_data
 module AM = Jigsaw_ppx_shared.Ast_manipulation
 module E = Jigsaw_ppx_shared.Errors
@@ -141,6 +142,12 @@ let structure_item (ctx : Context.t) rec_mapper strct_item =
             | None -> vb)
         value_bindings in
         {strct_item with pstr_desc = Pstr_value (recflag, value_bindings')}
+    | Pstr_extension (ext, attr) ->
+      begin match Injection_functors.handle_auto_inject_module ctx ext attr with
+        | Some m_binding ->
+           {strct_item with pstr_desc = Pstr_module (rec_mapper.module_binding rec_mapper m_binding)}
+        | None -> default ()
+      end
     | _ -> default ()
 (* End mapper functions  *)
 
@@ -164,17 +171,46 @@ let save_context _config _cookies ctx =
   let current_library = Context.get_current_library ctx in
   P.persist_data cwd current_library analysis_data_of_context files_in_current_context
 
+let dump_to_file ctx toplevel_result =
+  match Sys.getenv_opt Names.Env.dump_dir with
+    | Some dump_path ->
+      if Sys.file_exists dump_path && Sys.is_directory dump_path then
+        (let cur_file_name = Context.get_current_file ctx in
+        let file_path = Filename.concat dump_path cur_file_name in
+        let access = 0o660 (* octal *) in
+        let flags : open_flag list = [Open_creat ; Open_wronly] in
+        let out_ch = open_out_gen flags access file_path in
+        let fmt = Format.formatter_of_out_channel out_ch in
+        Errors.print_structure fmt toplevel_result;
+        close_out out_ch;
+        Errors.debug ("Wrote preprocessing result to file " ^ file_path))
+      else
+        Errors.raise_error_noloc ("Not a folder: " ^ dump_path)
+    | None -> ()
+
+(* The ast mappers catch and re-raise some  exceptions by default, meaning that we don't get usefull stack traces.
+   We avoid this by wrapping every mapper function in a try-with *)
+let exception_wrapper (mapper_fun : Ast_mapper.mapper -> 'a -> 'a) m v =
+  try
+    mapper_fun m v
+  with Failure msg ->
+    begin
+      prerr_endline ("Error: " ^ msg);
+      if Errors.is_print_stacktrace_enabled then
+        prerr_endline  (Printexc.get_backtrace ());
+        exit 1
+    end
 
 
 let actual_mapper ctx : Ast_mapper.mapper =
   {
     Ast_mapper.default_mapper with
-      type_declaration = type_declaration ctx;
-      attribute = attribute ctx;
-      extension = extension ctx;
-      module_binding = module_binding ctx;
-      structure = structure ctx;
-      structure_item = structure_item ctx;
+      type_declaration = exception_wrapper (type_declaration ctx);
+      attribute = exception_wrapper (attribute ctx);
+      extension = exception_wrapper (extension ctx);
+      module_binding = exception_wrapper (module_binding ctx);
+      structure = exception_wrapper (structure ctx);
+      structure_item = exception_wrapper (structure_item ctx);
   }
 
 let toplevel_structure config cookies _ strct =
@@ -198,6 +234,7 @@ let toplevel_structure config cookies _ strct =
   let result = structure ctx m strct_without_marker in
   E.debug "toplevel structure end";
   save_context config cookies ctx;
+  dump_to_file ctx result;
   result
 
 
