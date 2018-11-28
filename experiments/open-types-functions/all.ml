@@ -341,7 +341,7 @@ let program =
     sum,
     app (
       varE "sum",
-      intE 20
+      intE 22
     )
   )
 
