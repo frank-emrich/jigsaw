@@ -1,5 +1,13 @@
 (executable
  (name        all)
+ (modules all)
+ (preprocess (pps ppx_deriving.std ))
+ (libraries ))
+
+
+(executable
+ (name        all_naive)
+ (modules all_naive)
  (preprocess (pps ppx_deriving.std ))
  (libraries ))
 

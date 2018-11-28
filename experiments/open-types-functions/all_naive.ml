@@ -61,15 +61,15 @@ type ('term, 'typ) core_tc_deps =
       (term : ('term, 'typ) core_term) : 'typ =
     let utc x =  deps.cctd_unlift_typ_to_core_typ  (deps.cctd_typecheck env x) in
     let tc x = (deps.cctd_typecheck env x) in
-    match term with
-    |  IntE _ -> deps.cctd_lift_core_typ_to_typ IntT
-    |  BoolE _ -> deps.cctd_lift_core_typ_to_typ BoolT
-    |  StringE _ -> deps.cctd_lift_core_typ_to_typ StringT
-    | (LamE (v, vt, b)) ->
+    match deps.cctd_unlift_term_to_core_term (deps.cctd_lift_core_term_to_term term) with
+    | Some IntE _ -> deps.cctd_lift_core_typ_to_typ IntT
+    | Some BoolE _ -> deps.cctd_lift_core_typ_to_typ BoolT
+    | Some StringE _ -> deps.cctd_lift_core_typ_to_typ StringT
+    | Some (LamE (v, vt, b)) ->
         let env' = (v, vt) :: env in
         let bt = deps.cctd_typecheck env' b in
         deps.cctd_lift_core_typ_to_typ (Arrow (vt, bt))
-    | (RecLamE (f, rt, v, vt, b)) ->
+    | Some (RecLamE (f, rt, v, vt, b)) ->
         let ft = deps.cctd_lift_core_typ_to_typ (Arrow (vt, rt)) in
         let env' = (f, ft) :: (v, vt) :: env in
         let bt = deps.cctd_typecheck env' b in
@@ -77,25 +77,26 @@ type ('term, 'typ) core_tc_deps =
           ft
         else
           raise (TypeError "wrong type annotation in RecLamE")
-    | (PlusE (l, r)) -> (
+    | Some (PlusE (l, r)) -> (
       match (utc l, utc r) with
       | Some IntT, Some IntT -> deps.cctd_lift_core_typ_to_typ IntT
       | _ -> raise (TypeError "adding non-ints") )
-    | (IfE (cond, t1, t2)) -> (
+    | Some (IfE (cond, t1, t2)) -> (
       match (utc cond, tc t1, tc t2) with
       | Some BoolT, typ1, typ2 when typ1 = typ2 -> typ1
       | _, typ1, typ2 when typ1 = typ2 -> raise (TypeError "Expecting bool in cond")
       | _ -> raise (TypeError "Expecting same types ") )
-    | (AppE (t1, t2)) -> (
+    | Some (AppE (t1, t2)) -> (
       match (utc t1, tc t2) with
       | Some (Arrow (t11, t12)), t2 when t11 = t2 -> t12
       | _ -> raise (TypeError "Wrong funcall type") )
-    | (VarE x) ->
+    | Some (VarE x) ->
       ( try ListLabels.assoc x env with Not_found -> raise (TypeError ("Variable " ^ x ^ "Not found")) )
-    | (IntEq (t1, t2) ) -> (
+    | Some (IntEq (t1, t2) ) -> (
       match (utc t1, utc t2) with
       | Some (IntT), Some IntT  -> deps.cctd_lift_core_typ_to_typ BoolT
       | _ -> raise (TypeError "Wrong funcall type") )
+    | None -> failwith "Impossible"
 
 type ('term, 'typ, 'value) core_eval_deps =
 {
@@ -115,15 +116,15 @@ type ('term, 'typ, 'value) core_eval_deps =
       (term : ('term, 'typ) core_term) : 'value =
     let ue x = deps.ced_unlift_value_to_core_value (deps.ced_eval env x) in
     let e x = deps.ced_eval env x in
-    match term with
-    |  (IntE i) -> deps.ced_lift_core_value_to_value (IntV i)
-    |  (BoolE b) -> deps.ced_lift_core_value_to_value (BoolV b)
-    |  (StringE s) -> deps.ced_lift_core_value_to_value (StringV s)
-    |  (LamE (v, _t, b)) -> deps.ced_lift_core_value_to_value (LamV (v,  b, env))
-    |  (RecLamE (f, _rt, v, _vt, b)) -> deps.ced_lift_core_value_to_value (RecLamV (f, v, b, env))
-    |  (PlusE (t1, t2)) -> ( match (ue t1, ue t2) with Some (IntV i1), Some (IntV i2) -> deps.ced_lift_core_value_to_value (IntV (i1 + i2)) | _ -> failwith "eval fail" )
-    |  (IfE (c, t1, t2)) -> ( match ue c with Some (BoolV b) -> if b then e t1 else e t2 | _ -> failwith "eval fail" )
-    |  (AppE (t1, t2)) -> (
+    match deps.ced_unlift_term_to_core_term (deps.ced_lift_core_term_to_term term) with
+    | Some (IntE i) -> deps.ced_lift_core_value_to_value (IntV i)
+    | Some (BoolE b) -> deps.ced_lift_core_value_to_value (BoolV b)
+    | Some (StringE s) -> deps.ced_lift_core_value_to_value (StringV s)
+    | Some (LamE (v, _t, b)) -> deps.ced_lift_core_value_to_value (LamV (v,  b, env))
+    | Some (RecLamE (f, _rt, v, _vt, b)) -> deps.ced_lift_core_value_to_value (RecLamV (f, v, b, env))
+    | Some (PlusE (t1, t2)) -> ( match (ue t1, ue t2) with Some (IntV i1), Some (IntV i2) -> deps.ced_lift_core_value_to_value (IntV (i1 + i2)) | _ -> failwith "eval fail" )
+    | Some (IfE (c, t1, t2)) -> ( match ue c with Some (BoolV b) -> if b then e t1 else e t2 | _ -> failwith "eval fail" )
+    | Some (AppE (t1, t2)) -> (
       match ue t1 with
       | Some (LamV (v, b, (env' : 'value venv ))) ->
           let env'' = (v, e t2) :: env' in
@@ -133,14 +134,16 @@ type ('term, 'typ, 'value) core_eval_deps =
           let env'' = (v, e t2) :: (f, lifted_recv) :: env' in
           deps.ced_eval env'' b
       | _ -> failwith "eval fail" )
-    |  (VarE v) -> List.assoc v env
-    |  (IntEq (t1, t2)) ->
+    | Some (VarE v) -> List.assoc v env
+    | Some (IntEq (t1, t2)) ->
       (match ue t1, ue t2 with
         | Some (IntV i1), Some (IntV i2) ->
           deps.ced_lift_core_value_to_value (BoolV (i1 = i2))
         | _ -> failwith "Evaluation error")
+    | None -> failwith "Impossible"
 
 (* Let *)
+
 
 
 type 'term let_term =
