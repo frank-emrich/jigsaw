@@ -75,6 +75,7 @@ popd
 
 echo "-------------------------------------------------------------------"
 
+#Non-extensible stuff
 
 pushd  non-extensible
 

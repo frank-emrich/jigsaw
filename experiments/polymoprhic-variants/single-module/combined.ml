@@ -298,7 +298,7 @@ let program =
     sum,
     `AppE (
       `VarE "sum",
-      `IntE 24
+      `IntE 23
     )
   )
 
