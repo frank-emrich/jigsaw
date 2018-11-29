@@ -19,6 +19,7 @@ result=""
 
 opam switch "$1"
 opam install ppx_deriving dune
+eval $(opam env)
 
 echo "Using compiler" "$1"
 
