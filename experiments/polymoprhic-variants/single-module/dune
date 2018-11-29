@@ -1,0 +1,5 @@
+(executable
+ (name        combined)
+ (preprocess (pps ppx_deriving.std ))
+ (ocamlopt_flags -O3)
+ (libraries ))
