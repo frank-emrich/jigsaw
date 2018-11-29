@@ -1,0 +1,4 @@
+(executable
+ (name        naive)
+ (preprocess (pps ppx_deriving.std ))
+ (libraries ))
