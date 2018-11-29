@@ -1,3 +1,6 @@
+(* TODO: This does not use the singled-out arith extension, yet *)
+
+
 type var = string [@@deriving show]
 
 type 'value venv = (var * 'value) list [@@deriving show]
@@ -118,3 +121,149 @@ and ('term, 'typ) core_term =
         | (`IntV i1),  (`IntV i2) ->
           (`BoolV (i1 = i2))
         | _ -> failwith "Evaluation error")
+
+
+
+
+type 'term let_term =
+  [ `Let of var * 'term * 'term ]
+    [@@deriving show]
+
+
+
+
+let let_typecheck
+      typecheck
+      (env : 'typ tenv)
+      (term : ('term)  let_term) : 'typ =
+    match term with
+      | (`Let (var, te1, te2)) ->
+        let ty1 = typecheck env te1 in
+        let env' = (var, ty1) :: env in
+        typecheck env' te2
+
+
+let let_eval
+   eval
+   (env : 'value venv)
+   (term : ('term) let_term) : 'value =
+   match term with
+    | (`Let (var, te1, te2)) ->
+      let v1 = eval env te1 in
+      let env' = (var, v1) :: env in
+      eval env' te2
+
+
+type 'typ ptyp =
+ [
+  | `BoolT
+  | `IntT
+  | `StringT
+  | `Arrow of 'typ * 'typ
+ ]  [@@deriving show]
+
+
+type ('value, 'term) pvalue = [
+   `IntV of int
+  | `BoolV of bool
+  | `StringV of string
+  | `LamV of var * 'term * ('value venv)
+  | `RecLamV  of var * var  * 'term * ('value venv)
+]  [@@deriving show]
+
+
+type ('term, 'typ) pterm = [
+   `IntE of int
+  | `BoolE of bool
+  | `StringE of string
+  | `LamE of var * 'typ * 'term
+  | `RecLamE of var * 'typ * var * 'typ  * 'term
+  | `PlusE of 'term * 'term
+  | `VarE of var
+  | `AppE of 'term * 'term
+  | `IfE of 'term * 'term * 'term
+  | `IntEq of 'term * 'term
+  |  `Let of var * 'term * 'term
+]  [@@deriving show]
+
+
+type typ = typ ptyp [@@deriving show]
+type term = (term, typ) pterm [@@deriving show]
+type value = (value, term) pvalue [@@deriving show]
+
+
+
+
+let rec typecheck (env : typ tenv) (term : term) : typ = match term with
+     # core_term as term -> core_typecheck typecheck env term
+    |# let_term as term -> let_typecheck typecheck env term
+
+
+
+let rec eval (env : value venv) (term: term) : value =
+  match term with
+    #core_term  as t2 -> core_eval eval env t2
+    | #let_term  as t2 -> let_eval eval env t2
+
+
+
+(* Same example program as for open types and functions *)
+
+
+
+
+
+
+let else_branch : term =
+  `Let (
+    "m",
+    `PlusE (
+      `VarE "x",
+      `IntE (-1)),
+    `Let (
+      "sm1",
+      `AppE (
+        `VarE "sum",
+        `VarE "m"),
+      `Let (
+        "sm2",
+         `AppE (
+           `VarE "sum",
+           `VarE "m"),
+        `PlusE (
+          `IntE 1,
+          `VarE "sm1")
+      )
+
+    )
+  )
+
+
+let sum =
+  `RecLamE ("sum", `IntT, "x", `IntT,
+    `IfE (
+      `IntEq (
+       `VarE "x",
+        `IntE 0),
+      `IntE 0,
+      else_branch
+    ))
+
+
+let program =
+  `Let (
+    "sum",
+    sum,
+    `AppE (
+      `VarE "sum",
+      `IntE 22
+    )
+  )
+
+let t = typecheck [] program
+
+let _ = print_endline (show_typ t)
+
+let res = eval [] program
+
+let _ = print_endline (show_value res)

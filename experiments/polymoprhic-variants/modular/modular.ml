@@ -41,6 +41,7 @@ type value = (value, term) pvalue [@@deriving show]
 let rec typecheck (env : typ Core.tenv) (term : term) : typ = match term with
      # Core.core_term as term -> Core.core_typecheck typecheck env term
     |# Let.let_term as term -> Let.let_typecheck typecheck env term
+    |#Arith.arith_term as term -> Arith.arith_typecheck typecheck env term
 
 
 
@@ -48,6 +49,7 @@ let rec eval (env : value Core.venv) (term: term) : value =
   match term with
     #Core.core_term  as t2 -> Core.core_eval eval env t2
     | #Let.let_term  as t2 -> Let.let_eval eval env t2
+    |#Arith.arith_term as t2 -> Arith.arith_eval eval env t2
 
 
 
