@@ -1,0 +1,14 @@
+(executable
+ (name        polymorphic_variants)
+ (preprocess (pps ppx_deriving.std ))
+ (modules polymorphic_variants)
+ (ocamlopt_flags -O3)
+ (libraries ))
+
+
+(executable
+ (name        normal_datatypes)
+ (preprocess (pps ppx_deriving.std ))
+ (modules normal_datatypes)
+ (ocamlopt_flags -O3)
+ (libraries ))
