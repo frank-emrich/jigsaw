@@ -1,8 +1,8 @@
-type var = string [@@deriving show]
+type var = string 
 
-type 'value venv = (var * 'value) list [@@deriving show]
+type 'value venv = (var * 'value) list 
 
-type 'typ tenv = (var * 'typ) list [@@deriving show]
+type 'typ tenv = (var * 'typ) list 
 
 exception TypeError of string
 
@@ -12,7 +12,7 @@ type 'typ core_typ =
   [ `BoolT
   | `StringT
   | `Arrow of 'typ * 'typ ]
-    [@@deriving show]
+    
 
 
 type ('value, 'term) core_value =
@@ -20,7 +20,7 @@ type ('value, 'term) core_value =
   | `StringV of string
   | `LamV of var * 'term * ('value venv)
   | `RecLamV  of var * var  * 'term * ('value venv) ]
-    [@@deriving show]
+    
 
 
 
@@ -35,7 +35,7 @@ and ('term, 'typ) core_term =
   | `VarE of var
   | `AppE of 'term * 'term
   | `IfE of 'term * 'term * 'term]
-    [@@deriving show]
+    
 
 
 

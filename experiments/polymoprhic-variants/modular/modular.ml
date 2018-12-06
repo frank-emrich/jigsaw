@@ -4,7 +4,7 @@ type 'typ ptyp =
   | `IntT
   | `StringT
   | `Arrow of 'typ * 'typ
- ]  [@@deriving show]
+ ]  
 
 
 type ('value, 'term) pvalue = [
@@ -13,7 +13,7 @@ type ('value, 'term) pvalue = [
   | `StringV of string
   | `LamV of Core.var * 'term * ('value Core.venv)
   | `RecLamV  of Core.var * Core.var  * 'term * ('value Core.venv)
-]  [@@deriving show]
+]  
 
 
 type ('term, 'typ) pterm = [
@@ -28,12 +28,12 @@ type ('term, 'typ) pterm = [
   | `IfE of 'term * 'term * 'term
   | `IntEq of 'term * 'term
   |  `Let of Core.var * 'term * 'term
-]  [@@deriving show]
+]  
 
 
-type typ = typ ptyp [@@deriving show]
-type term = (term, typ) pterm [@@deriving show]
-type value = (value, term) pvalue [@@deriving show]
+type typ = typ ptyp 
+type term = (term, typ) pterm 
+type value = (value, term) pvalue 
 
 
 
@@ -108,8 +108,8 @@ let program =
 
 let t = typecheck [] program
 
-let _ = print_endline (show_typ t)
+(*let _ = print_endline (show_typ t)*)
 
 let res = eval [] program
 
-let _ = print_endline (show_value res)
+(*let _ = print_endline (show_value res)*)

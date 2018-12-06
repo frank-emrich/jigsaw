@@ -2,19 +2,19 @@ open Shared
 
 type arith_typ =
   [ `IntT ]
-    [@@deriving show]
+    
 
 
 type arith_value =
   [ `IntV of int ]
-    [@@deriving show]
+    
 
 
 type 'term arith_term =
   [ `IntE of int
   | `PlusE of 'term * 'term
   | `IntEq of 'term * 'term ]
-    [@@deriving show]
+    
 
 
 

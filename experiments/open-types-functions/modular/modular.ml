@@ -4,21 +4,21 @@ open Shared
 type typ =
    | CoreTyp of typ Core.core_typ
    | ArithTyp of Arith.arith_typ
-  [@@deriving show]
+  
 
 (* The union of all extensions of the core terms *)
 type term =
    | CoreTerm of (term, typ) Core.core_term
    | LetTerm of term Let.let_term
    | ArithTerm of term Arith.arith_term
-  [@@deriving show]
+  
 
 
 (* The union of all extensions of the core values *)
 type value =
    | CoreValue of (value, term) Core.core_value
    | ArithValue of Arith.arith_value
-  [@@deriving show]
+  
 
 
 let lift_let_term (lt : term Let.let_term) =  LetTerm lt
@@ -199,8 +199,8 @@ let program =
 
 let t = typecheck [] program
 
-let _ = print_endline (show_typ t)
+(*let _ = print_endline (show_typ t)*)
 
 let res = eval [] program
 
-let _ = print_endline (show_value res)
+(*let _ = print_endline (show_value res)*)

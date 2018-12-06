@@ -1,11 +1,11 @@
 (* TODO: This does not use the singled-out arith extension, yet *)
 
 
-type var = string [@@deriving show]
+type var = string 
 
-type 'value venv = (var * 'value) list [@@deriving show]
+type 'value venv = (var * 'value) list 
 
-type 'typ tenv = (var * 'typ) list [@@deriving show]
+type 'typ tenv = (var * 'typ) list 
 
 exception TypeError of string
 
@@ -15,7 +15,7 @@ type 'typ core_typ =
   [ `BoolT
   | `StringT
   | `Arrow of 'typ * 'typ ]
-    [@@deriving show]
+    
 
 
 type ('value, 'term) core_value =
@@ -23,7 +23,7 @@ type ('value, 'term) core_value =
   | `StringV of string
   | `LamV of var * 'term * ('value venv)
   | `RecLamV  of var * var  * 'term * ('value venv) ]
-    [@@deriving show]
+    
 
 
 
@@ -38,7 +38,7 @@ and ('term, 'typ) core_term =
   | `VarE of var
   | `AppE of 'term * 'term
   | `IfE of 'term * 'term * 'term ]
-    [@@deriving show]
+    
 
 
 
@@ -108,19 +108,19 @@ and ('term, 'typ) core_term =
 
 type arith_typ =
   [ `IntT ]
-    [@@deriving show]
+    
 
 
 type arith_value =
   [ `IntV of int ]
-    [@@deriving show]
+    
 
 
 type 'term arith_term =
   [ `IntE of int
   | `PlusE of 'term * 'term
   | `IntEq of 'term * 'term ]
-    [@@deriving show]
+    
 
 
 
@@ -167,7 +167,7 @@ let arith_eval
 
 type 'term let_term =
   [ `Let of var * 'term * 'term ]
-    [@@deriving show]
+    
 
 
 
@@ -200,7 +200,7 @@ type 'typ ptyp =
   | `IntT
   | `StringT
   | `Arrow of 'typ * 'typ
- ]  [@@deriving show]
+ ]  
 
 
 type ('value, 'term) pvalue = [
@@ -209,7 +209,7 @@ type ('value, 'term) pvalue = [
   | `StringV of string
   | `LamV of var * 'term * ('value venv)
   | `RecLamV  of var * var  * 'term * ('value venv)
-]  [@@deriving show]
+]  
 
 
 type ('term, 'typ) pterm = [
@@ -224,12 +224,12 @@ type ('term, 'typ) pterm = [
   | `IfE of 'term * 'term * 'term
   | `IntEq of 'term * 'term
   |  `Let of var * 'term * 'term
-]  [@@deriving show]
+]  
 
 
-type typ = typ ptyp [@@deriving show]
-type term = (term, typ) pterm [@@deriving show]
-type value = (value, term) pvalue [@@deriving show]
+type typ = typ ptyp 
+type term = (term, typ) pterm 
+type value = (value, term) pvalue 
 
 
 
@@ -304,8 +304,8 @@ let program =
 
 let t = typecheck [] program
 
-let _ = print_endline (show_typ t)
+(*let _ = print_endline (show_typ t)*)
 
 let res = eval [] program
 
-let _ = print_endline (show_value res)
+(*let _ = print_endline (show_value res)*)

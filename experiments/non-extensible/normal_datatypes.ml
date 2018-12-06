@@ -1,4 +1,4 @@
-type var = string [@@deriving show]
+type var = string 
 
 
 
@@ -11,7 +11,7 @@ type typ =
   | IntT
   | StringT
   | Arrow of typ * typ
-   [@@deriving show]
+   
 
 
 type  term =
@@ -26,7 +26,7 @@ type  term =
   | IfE of term * term * term
   | IntEq of term * term
   | Let of var * term * term
-  [@@deriving show]
+  
 
 
 
@@ -36,16 +36,16 @@ type  value =
   | StringV of string
   | LamV of var * term * (venv)
   | RecLamV  of var * var  * term * (venv)
-  [@@deriving show]
+  
 
-and venv = (var * value) list [@@deriving show]
-
-
+and venv = (var * value) list 
 
 
 
 
-type tenv = (var * typ) list [@@deriving show]
+
+
+type tenv = (var * typ) list 
 
 
 
@@ -187,8 +187,8 @@ let program =
 
 let t = typecheck [] program
 
-let _ = print_endline (show_typ t)
+(*let _ = print_endline (show_typ t)*)
 
 let res = eval [] program
 
-let _ = print_endline (show_value res)
+(*let _ = print_endline (show_value res)*)

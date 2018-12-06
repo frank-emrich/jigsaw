@@ -1,8 +1,8 @@
-type var = string [@@deriving show]
+type var = string
 
-type 'value venv = (var * 'value) list [@@deriving show]
+type 'value venv = (var * 'value) list
 
-type 'typ tenv = (var * 'typ) list [@@deriving show]
+type 'typ tenv = (var * 'typ) list
 
 exception TypeError of string
 
@@ -13,7 +13,7 @@ type 'typ core_typ =
   | BoolT
   | StringT
   | Arrow of 'typ * 'typ
-    [@@deriving show]
+
 
 
 type ('value, 'term) core_value =
@@ -21,7 +21,7 @@ type ('value, 'term) core_value =
   | StringV of string
   | LamV of var * 'term * ('value venv)
   | RecLamV  of var * var  * 'term * ('value venv)
-    [@@deriving show]
+
 
 
 
@@ -36,7 +36,7 @@ and ('term, 'typ) core_term =
   | VarE of var
   | AppE of 'term * 'term
   | IfE of 'term * 'term * 'term
-    [@@deriving show]
+
 
 type ('term, 'typ) core_tc_deps =
 {
@@ -45,7 +45,7 @@ type ('term, 'typ) core_tc_deps =
   cctd_lift_core_term_to_term : ('term, 'typ) core_term -> 'term;
   cctd_unlift_term_to_core_term : 'term -> (('term,'typ) core_term) option;
   cctd_typecheck :  'typ tenv -> 'term -> 'typ
-} [@@deriving show]
+}
 
 
  let core_typecheck
@@ -92,7 +92,7 @@ type ('term, 'typ, 'value) core_eval_deps =
   ced_lift_core_value_to_value : ('value, 'term) core_value -> 'value;
   ced_unlift_value_to_core_value : 'value -> (('value, 'term) core_value) option;
   ced_eval : 'value  venv -> 'term -> 'value
-} [@@deriving show]
+}
 
 
   let core_eval
@@ -126,19 +126,19 @@ type ('term, 'typ, 'value) core_eval_deps =
 
 type arith_typ =
   | IntT
-    [@@deriving show]
+
 
 
 type arith_value =
   | IntV of int
-    [@@deriving show]
+
 
 
 type 'term arith_term =
   | IntE of int
   | PlusE of 'term * 'term
   | IntEq of 'term * 'term
-    [@@deriving show]
+
 
 
 
@@ -152,7 +152,7 @@ type ('term, 'typ) arith_tc_deps =
   atcd_lift_arith_term_to_term : 'term   arith_term -> 'term;
   atcd_unlift_term_to_arith_term : 'term -> (('term)  arith_term) option;
   atcd_typecheck :  'typ tenv -> 'term -> 'typ
-} [@@deriving show]
+}
 
 let arith_typecheck
       (deps : ('term, 'typ) arith_tc_deps)
@@ -181,7 +181,7 @@ type ('term, 'typ, 'value) arith_eval_deps =
   aed_eval : 'value  venv -> 'term -> 'value;
   aed_lift_core_value_to_value : ('value, 'term) core_value -> 'value
 
-} [@@deriving show]
+}
 
 
 
@@ -206,7 +206,7 @@ let arith_eval
 
 type 'term let_term =
   | Let of var * 'term * 'term
-    [@@deriving show]
+
 
 
 type ('term, 'typ) let_tc_deps =
@@ -214,7 +214,7 @@ type ('term, 'typ) let_tc_deps =
   ltcd_lift_let_term_to_term : 'term   let_term -> 'term;
   ltcd_unlift_term_to_let_term : 'term -> (('term)  let_term) option;
   ltcd_typecheck :  'typ tenv -> 'term -> 'typ
-} [@@deriving show]
+}
 
 let let_typecheck
       (deps : ('term, 'typ) let_tc_deps)
@@ -232,7 +232,7 @@ type ('term, 'typ,  'value) let_eval_deps =
   led_lift_let_term_to_term : ('term)  let_term -> 'term;
   led_unlift_term_to_let_term : 'term -> (('term)  let_term) option;
   led_eval : 'value  venv -> 'term -> 'value
-} [@@deriving show]
+}
 
 let let_eval
    (deps: ('term, 'typ, 'value) let_eval_deps)
@@ -252,21 +252,21 @@ let let_eval
 type typ =
    | CoreTyp of typ core_typ
    | ArithTyp of arith_typ
-  [@@deriving show]
+
 
 (* The union of all extensions of the core terms *)
 type term =
    | CoreTerm of (term, typ) core_term
    | LetTerm of term let_term
    | ArithTerm of term arith_term
-  [@@deriving show]
+
 
 
 (* The union of all extensions of the core values *)
 type value =
    | CoreValue of (value, term) core_value
    | ArithValue of arith_value
-  [@@deriving show]
+
 
 
 let lift_let_term (lt : term let_term) =  LetTerm lt
@@ -447,8 +447,8 @@ let program =
 
 let t = typecheck [] program
 
-let _ = print_endline (show_typ t)
+(*let _ = print_endline (show_typ t)*)
 
 let res = eval [] program
 
-let _ = print_endline (show_value res)
+(*let _ = print_endline (show_value res)*)

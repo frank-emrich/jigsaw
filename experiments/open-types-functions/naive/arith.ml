@@ -2,19 +2,19 @@ open Shared
 
 type arith_typ =
   | IntT
-    [@@deriving show]
+    
 
 
 type arith_value =
   | IntV of int
-    [@@deriving show]
+    
 
 
 type 'term arith_term =
   | IntE of int
   | PlusE of 'term * 'term
   | IntEq of 'term * 'term
-    [@@deriving show]
+    
 
 
 
@@ -28,7 +28,7 @@ type ('term, 'typ) arith_tc_deps =
   atcd_lift_arith_term_to_term : 'term   arith_term -> 'term;
   atcd_unlift_term_to_arith_term : 'term -> (('term)  arith_term) option;
   atcd_typecheck :  'typ tenv -> 'term -> 'typ
-} [@@deriving show]
+} 
 
 let arith_typecheck
       (deps : ('term, 'typ) arith_tc_deps)
@@ -58,7 +58,7 @@ type ('term, 'typ, 'value) arith_eval_deps =
   aed_eval : 'value  venv -> 'term -> 'value;
   aed_lift_core_value_to_value : ('value, 'term) Core.core_value -> 'value
 
-} [@@deriving show]
+} 
 
 
 
