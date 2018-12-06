@@ -2,10 +2,11 @@
 
 
 #NEWLINE=$'\n'
+RESULTFILE="results.txt"
 
 function bench {
    echo "Benchmarking: $2"
-   cur_result=$(python -m timeit -n 10 -r 3 -v -s 'import os' "os.system(\"$1\")" | grep -o -E "[0-9\.]+ [a-z]+ per loop" | grep -o -E "[0-9\.]+")
+   cur_result=$(python -m timeit -n 1 -r 1 -v -s 'import os' "os.system(\"$1\")" | grep -o -E "[0-9\.]+ [a-z]+ per loop" | grep -o -E "[0-9\.]+")
    echo $cur_result
    result+="$2 : ${cur_result}\n"
 }
@@ -14,40 +15,40 @@ function bench {
 function per_compiler_run {
 
 result=""
+FLAGS="$2"
 
 #setup compiler
 
 opam switch "$1"
-opam install ppx_deriving dune
 eval $(opam env)
 
-echo "Using compiler" "$1"
+echo "Using compiler $1, flags $2"
 
 #Open types and functions
 
 pushd open-types-functions
 
 pushd naive
-dune clean
-dune build naive.exe
-bench "_build/default/naive.exe > /dev/null" "open types, naive multi module"
+make clean
+make FLAGS="$FLAGS" naive
+bench "_build/naive.exe > /dev/null" "open types, naive multi module"
 popd
 
 echo "-------------------------------------------------------------------"
 
 pushd modular
-dune clean
-dune build modular.exe
-bench "_build/default/modular.exe > /dev/null" "open types, multi module"
+make clean
+make FLAGS="$FLAGS" modular
+bench "_build/modular.exe > /dev/null" "open types, multi module"
 popd
 
 echo "-------------------------------------------------------------------"
 
 
 pushd single-module
-dune clean
-dune build combined.exe
-bench "_build/default/combined.exe > /dev/null" "open types, single module"
+make clean
+make FLAGS="$FLAGS" combined
+bench "_build/combined.exe > /dev/null" "open types, single module"
 popd
 
 echo "-------------------------------------------------------------------"
@@ -59,17 +60,27 @@ popd
 pushd  polymoprhic-variants
 
 pushd modular
-dune clean
-dune build modular.exe
-bench "_build/default/modular.exe > /dev/null" "polymorphic variants (extensible design) over multiple files"
+make clean
+make FLAGS="$FLAGS" modular
+bench "_build/modular.exe > /dev/null" "polymorphic variants (extensible design) over multiple files"
 popd
 
 echo "-------------------------------------------------------------------"
 
+
+pushd modular
+make clean
+make FLAGS="$FLAGS" modular_combined_compilation
+bench "_build/modular_combined_compilation.exe > /dev/null" "polymorphic variants (extensible design) over multiple files, but not using separate compilation (all .ml files combined at the same time)"
+popd
+
+echo "-------------------------------------------------------------------"
+
+
 pushd single-module
-dune clean
-dune build combined.exe
-bench "_build/default/combined.exe > /dev/null" "polymorphic variants (extensible design) in single file"
+make clean
+make FLAGS="$FLAGS" combined
+bench "_build/combined.exe > /dev/null" "polymorphic variants (extensible design) in single file"
 popd
 
 popd
@@ -81,20 +92,20 @@ echo "-------------------------------------------------------------------"
 pushd  non-extensible
 
 
-dune clean
-dune build polymorphic_variants.exe
-bench "_build/default/polymorphic_variants.exe > /dev/null" "polymorphic variants (non-extensible design) in single file"
+make clean
+make FLAGS="$FLAGS" polymorphic_variants
+bench "_build/polymorphic_variants.exe > /dev/null" "polymorphic variants (non-extensible design) in single file"
 
 echo "-------------------------------------------------------------------"
 
-dune clean
-dune build normal_datatypes.exe
-bench "_build/default/normal_datatypes.exe > /dev/null"  "non-polymorphic (i.e., \"normal\") datatypes (non-extensible design) in single file"
+make clean
+make FLAGS="$FLAGS" normal_datatypes
+bench "_build/normal_datatypes.exe > /dev/null"  "non-polymorphic (i.e., \"normal\") datatypes (non-extensible design) in single file"
 
 
 popd
 
-echo -e "Results:\n"$result
+echo -e "Results compiler $1, flags $2 :\n"$result "\n" | tee -a "$RESULTFILE"
 echo "-------------------------------------------------------------------"
 echo "-------------------------------------------------------------------"
 
@@ -105,5 +116,6 @@ echo "-------------------------------------------------------------------"
 
 
 
-per_compiler_run "4.07.1"
-per_compiler_run "4.07.1+flambda"
+per_compiler_run "4.07.1" "-O2 -opaque"
+per_compiler_run "4.07.1" "-O3 -nodynlink"
+per_compiler_run "4.07.1+flambda" "-O3 -nodynlink"
