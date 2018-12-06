@@ -2,19 +2,19 @@ open Shared
 
 type arith_typ =
   | IntT
-    
+
 
 
 type arith_value =
   | IntV of int
-    
+
 
 
 type 'term arith_term =
   | IntE of int
   | PlusE of 'term * 'term
   | IntEq of 'term * 'term
-    
+
 
 
 
@@ -28,7 +28,7 @@ type ('term, 'typ) arith_tc_deps =
   atcd_lift_arith_term_to_term : 'term   arith_term -> 'term;
   atcd_unlift_term_to_arith_term : 'term -> (('term)  arith_term) option;
   atcd_typecheck :  'typ tenv -> 'term -> 'typ
-} 
+}
 
 let arith_typecheck
       (deps : ('term, 'typ) arith_tc_deps)
@@ -43,7 +43,7 @@ let arith_typecheck
       | _ -> raise (TypeError "adding non-ints") )
     | Some (IntEq (t1, t2) ) -> (
       match (utc t1, utc t2) with
-      | Some (IntT), Some IntT  -> deps.atcd_lift_core_typ_to_typ BoolT
+      | Some (IntT), Some IntT  -> deps.atcd_lift_core_typ_to_typ Core.BoolT
       | _ -> raise (TypeError "Wrong funcall type") )
     | None -> failwith "impossible"
 
@@ -58,7 +58,7 @@ type ('term, 'typ, 'value) arith_eval_deps =
   aed_eval : 'value  venv -> 'term -> 'value;
   aed_lift_core_value_to_value : ('value, 'term) Core.core_value -> 'value
 
-} 
+}
 
 
 
@@ -74,7 +74,7 @@ let arith_eval
     | Some (IntEq (t1, t2)) ->
       (match ue t1, ue t2 with
         | Some (IntV i1), Some (IntV i2) ->
-          deps.aed_lift_core_value_to_value (BoolV (i1 = i2))
+          deps.aed_lift_core_value_to_value (Core.BoolV (i1 = i2))
         | _ -> failwith "Evaluation error")
     | None -> failwith "Impossible"
 

@@ -4,21 +4,21 @@ open Shared
 type typ =
    | CoreTyp of typ Core.core_typ
    | ArithTyp of Arith.arith_typ
-  
+
 
 (* The union of all extensions of the core terms *)
 type term =
    | CoreTerm of (term, typ) Core.core_term
    | LetTerm of term Let.let_term
    | ArithTerm of term Arith.arith_term
-  
+
 
 
 (* The union of all extensions of the core values *)
 type value =
    | CoreValue of (value, term) Core.core_value
    | ArithValue of Arith.arith_value
-  
+
 
 
 let lift_let_term (lt : term Let.let_term) =  LetTerm lt
@@ -135,18 +135,18 @@ let rec eval (env : value venv) (term: term) : value = match term with
 *)
 
 
-let recLamE (a,b,c,d,e) = lift_core_term (RecLamE (a,b,c,d,e))
+let recLamE (a,b,c,d,e) = lift_core_term (Core.RecLamE (a,b,c,d,e))
 
-let ifE (a,b,c) = lift_core_term (IfE (a,b,c))
-let intEq (a,b) = lift_arith_term (IntEq (a,b))
-let varE x = lift_core_term (VarE x)
-let intE x = lift_arith_term (IntE x)
-let plus (a,b) = lift_arith_term (PlusE (a,b))
-let app (a,b) = lift_core_term (AppE (a,b))
+let ifE (a,b,c) = lift_core_term (Core.IfE (a,b,c))
+let intEq (a,b) = lift_arith_term (Arith.IntEq (a,b))
+let varE x = lift_core_term (Core.VarE x)
+let intE x = lift_arith_term (Arith.IntE x)
+let plus (a,b) = lift_arith_term (Arith.PlusE (a,b))
+let app (a,b) = lift_core_term (Core.AppE (a,b))
 
-let letE (a,b,c) = lift_let_term (Let (a,b,c))
+let letE (a,b,c) = lift_let_term (Let.Let (a,b,c))
 
-let intT = lift_arith_typ IntT
+let intT = lift_arith_typ Arith.IntT
 
 
 
