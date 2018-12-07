@@ -119,18 +119,18 @@ let eval_code =
 *)
 
 
-let recLamE (a,b,c,d,e) = (Runnative.run lift_core_term) (Core_types.RecLamE (a,b,c,d,e))
+let recLamE (a,b,c,d,e) = Naive_staged_types.CoreTerm (Core_types.RecLamE (a,b,c,d,e))
 
-let ifE (a,b,c) = (Runnative.run lift_core_term) (Core_types.IfE (a,b,c))
-let intEq (a,b) = (Runnative.run lift_arith_term) (Arith_types.IntEq (a,b))
-let varE x = (Runnative.run lift_core_term) (Core_types.VarE x)
-let intE x = (Runnative.run lift_arith_term) (Arith_types.IntE x)
-let plus (a,b) = (Runnative.run lift_arith_term) (Arith_types.PlusE (a,b))
-let app (a,b) = (Runnative.run lift_core_term) (Core_types.AppE (a,b))
+let ifE (a,b,c) = Naive_staged_types.CoreTerm (Core_types.IfE (a,b,c))
+let intEq (a,b) = Naive_staged_types.ArithTerm (Arith_types.IntEq (a,b))
+let varE x = Naive_staged_types.CoreTerm (Core_types.VarE x)
+let intE x = Naive_staged_types.ArithTerm (Arith_types.IntE x)
+let plus (a,b) = Naive_staged_types.ArithTerm (Arith_types.PlusE (a,b))
+let app (a,b) = Naive_staged_types.CoreTerm (Core_types.AppE (a,b))
 
-let letE (a,b,c) = (Runnative.run lift_let_term) (Let_types.Let (a,b,c))
+let letE (a,b,c) = Naive_staged_types.LetTerm (Let_types.Let (a,b,c))
 
-let intT = (Runnative.run lift_arith_typ) Arith_types.IntT
+let intT = Naive_staged_types.ArithTyp Arith_types.IntT
 
 
 
