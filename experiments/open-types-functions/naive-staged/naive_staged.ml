@@ -185,18 +185,21 @@ let _ = Printexc.record_backtrace true
 
 let _ = prerr_endline "stop1"
 
+
+let compilation_flags = String.concat " " (List.tl (Array.to_list Sys.argv))
+
 let typecheck =
   try
-    Custom_runnative.run typecheck_code
+    Custom_runnative.run compilation_flags typecheck_code
   with
     Dynlink.Error err  -> prerr_endline ("Backtrace:" ^ Dynlink.error_message err ^ (Printexc.get_backtrace ())   ); failwith "death"
 
 let _ = prerr_endline "stop2"
 
-(*
+
 let eval =
-  Runnative.run eval_code
-*)
+  Custom_runnative.run compilation_flags eval_code
+
 
 let _ = prerr_endline "stop3"
 
@@ -206,6 +209,6 @@ let _ = prerr_endline "stop4"
 
 (*let _ = print_endline (show_typ t)*)
 
-(*let res = eval [] program*)
+let res = eval [] program
 
 (*let _ = print_endline (show_value res)*)

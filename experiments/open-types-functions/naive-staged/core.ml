@@ -48,7 +48,7 @@ type ('term, 'typ) core_tc_deps =
       | Some (Arrow (t11, t12)), t2 when t11 = t2 -> t12
       | _ -> raise (TypeError "Wrong funcall type") )
     | Some (VarE x) ->
-      ( try ListLabels.assoc x env with Not_found -> raise (TypeError ("Variable " ^ x ^ "Not found")) )
+      ( try List.assoc x env with Not_found -> raise (TypeError ("Variable " ^ x ^ "Not found")))
 
     | None -> failwith "Impossible"
   >.

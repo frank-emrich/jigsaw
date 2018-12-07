@@ -20,12 +20,13 @@ let ocamlopt_path =
   concat (dirname (Config.standard_runtime)) "ocamlopt"
 
 (* Compile the source file and make the .cmxs, returning its name *)
-let compile_source : string -> string = fun src_fname ->
+let compile_source : string -> string -> string = fun compilation_flags src_fname ->
   let basename = Filename.remove_extension src_fname in
   let plugin_fname =  basename ^ ".cmxs" in
   let other_files  =  [basename ^ ".cmi"; basename ^ ".cmx";
                        basename ^ ".o"] in
   let cmdline = ocamlopt_path ^
+                " " ^ compilation_flags ^ " "^
                 " -shared" ^
                 " -o " ^ plugin_fname ^
                 (String.concat "" @@
@@ -67,17 +68,17 @@ let create_comp_unit : 'a closed_code -> string = fun cde ->
       code_file_prefix ".ml" in
   let ppf = formatter_of_out_channel oc in
   let ()  = fprintf ppf
-      "Runnative.result__ := Some (Obj.repr (%a))@."
+      "Custom_runnative.result__ := Some (Obj.repr (%a))@."
       format_code cde in
   let () = close_out oc in
   fname                                 (* let the errors propagate *)
 
 
-let run_native : 'a closed_code -> 'a = fun cde ->
+let run_native : string -> 'a closed_code -> 'a = fun compilation_flags cde ->
   if not Dynlink.is_native then
     failwith "run_native only works in the native code";
   let source_fname = create_comp_unit cde in
-  let plugin_fname = compile_source source_fname in
+  let plugin_fname = compile_source compilation_flags source_fname in
   let () = Dynlink.loadfile_private plugin_fname in
   Sys.remove plugin_fname;
   Sys.remove source_fname;
@@ -91,5 +92,5 @@ let run_native : 'a closed_code -> 'a = fun cde ->
    *)
 
 (* Abbreviations for backwards compatibility *)
-let run cde = run_native (close_code cde)
+let run compilation_flags cde = run_native compilation_flags (close_code cde)
 let (!.) cde = run cde
