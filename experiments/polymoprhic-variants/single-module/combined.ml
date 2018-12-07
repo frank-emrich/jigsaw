@@ -1,11 +1,11 @@
 (* TODO: This does not use the singled-out arith extension, yet *)
 
 
-type var = string 
+type var = string
 
-type 'value venv = (var * 'value) list 
+type 'value venv = (var * 'value) list
 
-type 'typ tenv = (var * 'typ) list 
+type 'typ tenv = (var * 'typ) list
 
 exception TypeError of string
 
@@ -15,7 +15,7 @@ type 'typ core_typ =
   [ `BoolT
   | `StringT
   | `Arrow of 'typ * 'typ ]
-    
+
 
 
 type ('value, 'term) core_value =
@@ -23,7 +23,7 @@ type ('value, 'term) core_value =
   | `StringV of string
   | `LamV of var * 'term * ('value venv)
   | `RecLamV  of var * var  * 'term * ('value venv) ]
-    
+
 
 
 
@@ -38,7 +38,7 @@ and ('term, 'typ) core_term =
   | `VarE of var
   | `AppE of 'term * 'term
   | `IfE of 'term * 'term * 'term ]
-    
+
 
 
 
@@ -108,19 +108,19 @@ and ('term, 'typ) core_term =
 
 type arith_typ =
   [ `IntT ]
-    
+
 
 
 type arith_value =
   [ `IntV of int ]
-    
+
 
 
 type 'term arith_term =
   [ `IntE of int
   | `PlusE of 'term * 'term
   | `IntEq of 'term * 'term ]
-    
+
 
 
 
@@ -167,7 +167,7 @@ let arith_eval
 
 type 'term let_term =
   [ `Let of var * 'term * 'term ]
-    
+
 
 
 
@@ -200,7 +200,7 @@ type 'typ ptyp =
   | `IntT
   | `StringT
   | `Arrow of 'typ * 'typ
- ]  
+ ]
 
 
 type ('value, 'term) pvalue = [
@@ -209,7 +209,7 @@ type ('value, 'term) pvalue = [
   | `StringV of string
   | `LamV of var * 'term * ('value venv)
   | `RecLamV  of var * var  * 'term * ('value venv)
-]  
+]
 
 
 type ('term, 'typ) pterm = [
@@ -224,12 +224,12 @@ type ('term, 'typ) pterm = [
   | `IfE of 'term * 'term * 'term
   | `IntEq of 'term * 'term
   |  `Let of var * 'term * 'term
-]  
+]
 
 
-type typ = typ ptyp 
-type term = (term, typ) pterm 
-type value = (value, term) pvalue 
+type typ = typ ptyp
+type term = (term, typ) pterm
+type value = (value, term) pvalue
 
 
 

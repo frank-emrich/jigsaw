@@ -1,6 +1,6 @@
 type 'term let_term =
   | Let of Shared.var * 'term * 'term
-    
+
 
 
 type ('term, 'typ) let_tc_deps =
@@ -8,7 +8,7 @@ type ('term, 'typ) let_tc_deps =
   ltcd_lift_let_term_to_term : 'term   let_term -> 'term;
   ltcd_unlift_term_to_let_term : 'term -> (('term)  let_term) option;
   ltcd_typecheck :  'typ Shared.tenv -> 'term -> 'typ
-} 
+}
 
 let let_typecheck
       (deps : ('term, 'typ) let_tc_deps)
@@ -27,7 +27,7 @@ type ('term, 'typ,  'value) let_eval_deps =
   led_lift_let_term_to_term : ('term)  let_term -> 'term;
   led_unlift_term_to_let_term : 'term -> (('term)  let_term) option;
   led_eval : 'value  Shared.venv -> 'term -> 'value
-} 
+}
 
 let let_eval
    (deps: ('term, 'typ, 'value) let_eval_deps)

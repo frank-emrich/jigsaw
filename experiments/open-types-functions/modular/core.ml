@@ -6,7 +6,7 @@ type 'typ core_typ =
   | BoolT
   | StringT
   | Arrow of 'typ * 'typ
-    
+
 
 
 type ('value, 'term) core_value =
@@ -14,7 +14,7 @@ type ('value, 'term) core_value =
   | StringV of string
   | LamV of var * 'term * ('value venv)
   | RecLamV  of var * var  * 'term * ('value venv)
-    
+
 
 
 
@@ -29,7 +29,7 @@ and ('term, 'typ) core_term =
   | VarE of var
   | AppE of 'term * 'term
   | IfE of 'term * 'term * 'term
-    
+
 
 type ('term, 'typ) core_tc_deps =
 {
@@ -38,7 +38,7 @@ type ('term, 'typ) core_tc_deps =
   cctd_lift_core_term_to_term : ('term, 'typ) core_term -> 'term;
   cctd_unlift_term_to_core_term : 'term -> (('term,'typ) core_term) option;
   cctd_typecheck :  'typ tenv -> 'term -> 'typ
-} 
+}
 
 
  let core_typecheck
@@ -85,7 +85,7 @@ type ('term, 'typ, 'value) core_eval_deps =
   ced_lift_core_value_to_value : ('value, 'term) core_value -> 'value;
   ced_unlift_value_to_core_value : 'value -> (('value, 'term) core_value) option;
   ced_eval : 'value  venv -> 'term -> 'value
-} 
+}
 
 
   let core_eval

@@ -4,7 +4,7 @@ type 'typ ptyp =
   | `IntT
   | `StringT
   | `Arrow of 'typ * 'typ
- ]  
+ ]
 
 
 type ('value, 'term) pvalue = [
@@ -13,7 +13,7 @@ type ('value, 'term) pvalue = [
   | `StringV of string
   | `LamV of Core.var * 'term * ('value Core.venv)
   | `RecLamV  of Core.var * Core.var  * 'term * ('value Core.venv)
-]  
+]
 
 
 type ('term, 'typ) pterm = [
@@ -28,12 +28,12 @@ type ('term, 'typ) pterm = [
   | `IfE of 'term * 'term * 'term
   | `IntEq of 'term * 'term
   |  `Let of Core.var * 'term * 'term
-]  
+]
 
 
-type typ = typ ptyp 
-type term = (term, typ) pterm 
-type value = (value, term) pvalue 
+type typ = typ ptyp
+type term = (term, typ) pterm
+type value = (value, term) pvalue
 
 
 

@@ -1,4 +1,4 @@
-type var = string 
+type var = string
 
 
 
@@ -11,7 +11,7 @@ type typ =
   | `IntT
   | `StringT
   | `Arrow of typ * typ
- ]  
+ ]
 
 
 type  term = [
@@ -26,7 +26,7 @@ type  term = [
   | `IfE of term * term * term
   | `IntEq of term * term
   | `Let of var * term * term
-]  
+]
 
 
 
@@ -36,16 +36,16 @@ type  value = [
   | `StringV of string
   | `LamV of var * term * (venv)
   | `RecLamV  of var * var  * term * (venv)
-]  
+]
 
-and venv = (var * value) list 
-
-
+and venv = (var * value) list
 
 
 
 
-type tenv = (var * typ) list 
+
+
+type tenv = (var * typ) list
 
 
 
