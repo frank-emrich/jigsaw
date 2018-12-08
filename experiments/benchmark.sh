@@ -42,7 +42,7 @@ eval $(opam env)
 make clean
 make FLAGS="$FLAGS" naive-staged
 pushd _build
-bench "./naive-staged.exe $FLAGS " "open types, naive multi module"
+bench "./naive-staged.exe $FLAGS " "open types, naive multi module, staged computation, without flambda"
 opam switch "$1"
 eval $(opam env)
 popd
@@ -68,7 +68,7 @@ echo "-------------------------------------------------------------------"
 #echo "-------------------------------------------------------------------"
 #
 #
-#popd
+popd
 #
 ##Polymorphic variants
 #pushd  polymoprhic-variants
