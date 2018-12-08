@@ -1,3 +1,7 @@
+(* Copy of runnative.ml from BER MetaOcaml, but allows passing flags to the staged compiler
+   (e.g., for optimization), and caches results, if enabled*)
+
+
 (* Given a closed code expression, compile it with the *native*
    compiler, link it in, and run returning
    its result or propagating raised exceptions.
@@ -5,6 +9,65 @@
 
 open Codelib
 open Format
+
+module Cache =
+struct
+
+  (* Maps Hashed (AST  + compilation flags) to compiled files. We need to do the hashing ourselves to fake being polymorphic over 't code *)
+  let the_table : (int, string) Hashtbl.t ref = ref (Hashtbl.create 5)
+  let changed : bool ref = ref false
+
+
+  let print_table tbl =
+    Hashtbl.iter (fun k v -> prerr_endline ("Key: " ^ string_of_int k ^ ", value: " ^ v )) tbl
+
+  let attempt_load_from_disk path =
+    if Sys.file_exists path then
+      (prerr_endline ("loading file " ^ path);
+      let c = open_in  path in
+      let table = Marshal.from_channel c in
+      the_table := table;
+      close_in c;
+      print_table table)
+
+  let save_if_changed path =
+    if !changed then
+      (prerr_endline ("saving file " ^ path);
+      print_table !the_table;
+      let c = open_out path in
+      Marshal.to_channel c !the_table [];
+      close_out c)
+    else
+      ()
+
+
+  let find_compiled_file_opt ((code, compilation_flags) as key) =
+    let key_hashed = Hashtbl.hash key in
+    prerr_endline ("hashed key find_compiled_file_opt " ^ string_of_int key_hashed  );
+    match Hashtbl.find_opt !the_table key_hashed with
+      | None -> None
+      | Some compiled_file ->
+        if Sys.file_exists compiled_file then
+          Some compiled_file
+        else
+          (* remove outdated entry from hash table *)
+          (prerr_endline ("removing file from cache " ^ string_of_int key_hashed );
+          changed := true;
+          Hashtbl.remove !the_table key_hashed;
+          None)
+
+  let add_compiled_file ((code, compilation_flags) as key) path =
+    let key_hashed = Hashtbl.hash key in
+    prerr_endline ("hashed key add_compiled_file " ^ string_of_int key_hashed  );
+    changed := true;
+    Hashtbl.add !the_table key_hashed path;
+    print_table !the_table
+
+
+end
+
+
+
 
 let load_path : string list ref = ref []
 
@@ -61,6 +124,7 @@ let result__ : Obj.t option ref = ref None
 
 let code_file_prefix = "runn"
 
+
 (* Create a file to compile and later link, using the given closed code *)
 let create_comp_unit : 'a closed_code -> string = fun cde ->
   let (fname,oc) =
@@ -68,20 +132,38 @@ let create_comp_unit : 'a closed_code -> string = fun cde ->
       code_file_prefix ".ml" in
   let ppf = formatter_of_out_channel oc in
   let ()  = fprintf ppf
-      "Custom_runnative.result__ := Some (Obj.repr (%a))@."
+      "Cached_runnative.result__ := Some (Obj.repr (%a))@."
       format_code cde in
   let () = close_out oc in
   fname                                 (* let the errors propagate *)
 
 
-let run_native : string -> 'a closed_code -> 'a = fun compilation_flags cde ->
+let create_plugin_file compilation_flags cde =
+  let source_fname = create_comp_unit cde in
+  compile_source compilation_flags source_fname
+
+let determine_plugin_file compilation_flags use_caching cde =
+  if use_caching then
+    match Cache.find_compiled_file_opt (cde, compilation_flags) with
+      | Some plugin_file ->
+        prerr_endline "found file in cache";
+        plugin_file
+      | None ->
+        let plugin_file = create_plugin_file compilation_flags cde in
+        prerr_endline "adding file to cache";
+        Cache.add_compiled_file (cde, compilation_flags) plugin_file;
+        plugin_file
+  else
+    create_plugin_file compilation_flags cde
+
+
+let run_native : string -> bool -> 'a closed_code -> 'a = fun compilation_flags use_caching cde ->
   if not Dynlink.is_native then
     failwith "run_native only works in the native code";
-  let source_fname = create_comp_unit cde in
-  let plugin_fname = compile_source compilation_flags source_fname in
+  let plugin_fname = determine_plugin_file compilation_flags use_caching cde in
   let () = Dynlink.loadfile_private plugin_fname in
-  Sys.remove plugin_fname;
-  Sys.remove source_fname;
+  (*Sys.remove plugin_fname;*)
+  (*Sys.remove source_fname;*)
   match !result__ with
   | None -> assert false                (* can't happen *)
   | Some x ->
@@ -92,5 +174,5 @@ let run_native : string -> 'a closed_code -> 'a = fun compilation_flags cde ->
    *)
 
 (* Abbreviations for backwards compatibility *)
-let run compilation_flags cde = run_native compilation_flags (close_code cde)
+let run compilation_flags use_caching cde = run_native compilation_flags use_caching (close_code cde)
 let (!.) cde = run cde

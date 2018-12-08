@@ -181,34 +181,50 @@ let program =
     )
   )
 
-let _ = Printexc.record_backtrace true
-
-let _ = prerr_endline "stop1"
 
 
-let compilation_flags = String.concat " " (List.tl (Array.to_list Sys.argv))
-
-let typecheck =
-  try
-    Custom_runnative.run compilation_flags typecheck_code
-  with
-    Dynlink.Error err  -> prerr_endline ("Backtrace:" ^ Dynlink.error_message err ^ (Printexc.get_backtrace ())   ); failwith "death"
-
-let _ = prerr_endline "stop2"
+let time f x =
+    let t = Sys.time() in
+    let fx = f x in
+    Printf.printf "Staging execution time: %fs\n" (Sys.time() -. t);
+    fx
 
 
-let eval =
-  Custom_runnative.run compilation_flags eval_code
+let (use_cache, compilation_flags) =
+  match Array.to_list Sys.argv with
+    | _ :: "use-caching" :: cf -> true, String.concat " " cf
+    | _ :: "no-caching" :: cf -> false, String.concat " " cf
+    | _ -> failwith "Wrong args"
 
 
-let _ = prerr_endline "stop3"
+
+
+let stage () =
+  (if use_cache then
+    prerr_endline "using caching";
+    Cached_runnative.Cache.attempt_load_from_disk "compiled_file_cache.blob");
+  Cached_runnative.run compilation_flags use_cache typecheck_code,
+  Cached_runnative.run compilation_flags use_cache eval_code
+
+
+
+let typecheck, eval = time stage ()
+
+
+
+
 
 let t = typecheck [] program
 
-let _ = prerr_endline "stop4"
+
 
 (*let _ = print_endline (show_typ t)*)
 
 let res = eval [] program
 
 (*let _ = print_endline (show_value res)*)
+
+
+let _ =
+  if use_cache then
+    Cached_runnative.Cache.save_if_changed "compiled_file_cache.blob"
