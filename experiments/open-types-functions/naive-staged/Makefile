@@ -6,7 +6,7 @@ BUILDDIR=_build
 
 $(BUILDDIR)/%.cmx : %.ml
 	mkdir -p $(BUILDDIR)
-	metaocamlopt $(FLAGS) -I $(BUILDDIR) -I ~/.opam/4.07.1+BER/lib/ocaml/compiler-libs -c -o $@ $<
+	metaocamlopt $(FLAGS) -I $(BUILDDIR) -I +compiler-libs -c -o $@ $<
 
 
 cached-runnative : $(BUILDDIR)/shared.cmx

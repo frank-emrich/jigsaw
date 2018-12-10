@@ -14,15 +14,17 @@ function bench {
 
 function per_compiler_run {
 
+
 result=""
+compiler="$1"
 FLAGS="$2"
 
 #setup compiler
 
-opam switch "$1"
+opam switch "$compiler"
 eval $(opam env)
 
-echo "Using compiler $1, flags $2"
+echo "Using compiler $compiler, flags $FLAGS"
 
 #Open types and functions
 
@@ -39,8 +41,10 @@ echo "-------------------------------------------------------------------"
 for optlevelstaged in "-O2 " "-O3" ; do
   for cachingstaged in "no-caching" "use-caching" ; do
     pushd naive-staged
-    opam switch "4.07.1+BER"
-    eval $(opam env)
+    if [ "$compiler" != "4.07.1+BER+flambda" ] ; then
+      opam switch "4.07.1+BER"
+      eval $(opam env)
+    fi
     make clean
     make FLAGS="$FLAGS" naive-staged
     pushd _build
@@ -62,6 +66,25 @@ popd
 
 echo "-------------------------------------------------------------------"
 
+
+for optlevelstaged in "-O2 " "-O3" ; do
+  for cachingstaged in "no-caching" "use-caching" ; do
+    pushd modular-staged
+    if [ "$compiler" != "4.07.1+BER+flambda" ] ; then
+      opam switch "4.07.1+BER"
+      eval $(opam env)
+    fi
+    make clean
+    make FLAGS="$FLAGS" modular-staged
+    pushd _build
+    bench "./modular-staged.exe $cachingstaged $optlevelstaged " "open types, multi module, staged computation, staged code optimization: $optlevelstaged, caching: $cachingstaged"
+    opam switch "$1"
+    eval $(opam env)
+    popd
+    popd
+    echo "-------------------------------------------------------------------"
+  done
+done
 
 #pushd single-module
 #make clean
@@ -137,3 +160,6 @@ echo "" > "$RESULTFILE"
 per_compiler_run "4.07.1" "-O2 -opaque"
 per_compiler_run "4.07.1" "-O3"
 per_compiler_run "4.07.1+flambda" "-O3 "
+
+#This compiler is not in the standard opam repository!
+per_compiler_run "4.07.1+BER+flambda" "-O3 "
