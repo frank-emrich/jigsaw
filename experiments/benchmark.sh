@@ -133,7 +133,7 @@ echo "-------------------------------------------------------------------"
 
 
 
-
+echo "" > "$RESULTFILE"
 per_compiler_run "4.07.1" "-O2 -opaque"
 per_compiler_run "4.07.1" "-O3"
 per_compiler_run "4.07.1+flambda" "-O3 "

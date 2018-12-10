@@ -9,15 +9,15 @@ $(BUILDDIR)/%.cmx : %.ml
 	metaocamlopt $(FLAGS) -I $(BUILDDIR) -I ~/.opam/4.07.1+BER/lib/ocaml/compiler-libs -c -o $@ $<
 
 
-cached-runnative :
+cached-runnative : $(BUILDDIR)/shared.cmx
 	mkdir -p $(BUILDDIR)
 	cp cached_runnative.ml $(BUILDDIR)
-	metaocamlopt $(FLAGS) -c -o "-I $(BUILDDIR)" -I ~/.opam/4.07.1+BER/lib/ocaml/compiler-libs -o $(BUILDDIR)/cached_runnative.cmx $(BUILDDIR)/cached_runnative.ml
+	metaocamlopt $(FLAGS) -c -I $(BUILDDIR) -I +compiler-libs  -o $(BUILDDIR)/cached_runnative.cmx $(BUILDDIR)/cached_runnative.ml
 
 naive-staged : cached-runnative $(BUILDDIR)/shared.cmx $(BUILDDIR)/core_types.cmx $(BUILDDIR)/core.cmx $(BUILDDIR)/arith_types.cmx $(BUILDDIR)/arith.cmx  $(BUILDDIR)/let_types.cmx $(BUILDDIR)/let.cmx $(BUILDDIR)/naive_staged_types.cmx $(BUILDDIR)/naive_staged.cmx
 	mkdir -p $(BUILDDIR)
 	metaocamlopt $(FLAGS) -I $(BUILDDIR) -I ~/.opam/4.07.1+BER/lib/ocaml/compiler-libs -o $(BUILDDIR)/naive-staged.exe \
-		$(BUILDDIR)/cached_runnative.cmx $(BUILDDIR)/shared.cmx $(BUILDDIR)/core_types.cmx $(BUILDDIR)/core.cmx $(BUILDDIR)/arith_types.cmx $(BUILDDIR)/arith.cmx  $(BUILDDIR)/let_types.cmx $(BUILDDIR)/let.cmx $(BUILDDIR)/naive_staged_types.cmx $(BUILDDIR)/naive_staged.cmx
+		$(BUILDDIR)/shared.cmx $(BUILDDIR)/cached_runnative.cmx  $(BUILDDIR)/core_types.cmx $(BUILDDIR)/core.cmx $(BUILDDIR)/arith_types.cmx $(BUILDDIR)/arith.cmx  $(BUILDDIR)/let_types.cmx $(BUILDDIR)/let.cmx $(BUILDDIR)/naive_staged_types.cmx $(BUILDDIR)/naive_staged.cmx
 
 
 naive-staged-combined :

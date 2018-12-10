@@ -183,11 +183,15 @@ let program =
 
 
 
-let time f x =
+let time msg f x =
+  if Shared.debug then
     let t = Sys.time() in
     let fx = f x in
-    Printf.printf "Staging execution time: %fs\n" (Sys.time() -. t);
+    Printf.eprintf "%s execution time: %fs\n" msg (Sys.time() -. t);
+    flush stderr;
     fx
+  else
+    f x
 
 
 let (use_cache, compilation_flags) =
@@ -208,13 +212,13 @@ let stage () =
 
 
 
-let typecheck, eval = time stage ()
+let typecheck, eval = time "staging" stage ()
 
 
+let curry2 f (x,y) = f x y
 
 
-
-let t = typecheck [] program
+let t = time "typechecking" (curry2 typecheck) ([], program)
 
 
 

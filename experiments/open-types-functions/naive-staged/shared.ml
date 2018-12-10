@@ -1,3 +1,5 @@
+let debug = false
+
 type var = string
 
 type 'value venv = (var * 'value) list
